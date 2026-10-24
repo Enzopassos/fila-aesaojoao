@@ -7,7 +7,8 @@ export function ModalSelecaoGuiche({
   onSelecionar,
   podeFechar,
   onFechar,
-  guichesDisponiveis = []
+  guichesDisponiveis = [],
+  ehAdmin = false
 }) {
   return (
     <div className="modal-selecao-overlay">
@@ -78,8 +79,20 @@ export function ModalSelecaoGuiche({
         </div>
 
         <div className="modal-selecao-rodape">
-          <ShieldCheck size={16} />
-          <span>Você poderá alterar seu guichê a qualquer momento clicando em "Trocar Mesa".</span>
+          <div className="modal-selecao-rodape-dica">
+            <ShieldCheck size={16} />
+            <span>Você poderá alterar seu guichê a qualquer momento clicando em "Trocar Mesa".</span>
+          </div>
+
+          {ehAdmin && !guicheAtual && (
+            <button
+              type="button"
+              className="btn-modo-gestor-dispensar"
+              onClick={onFechar}
+            >
+              Apenas Acompanhar Fila (Modo Gestor)
+            </button>
+          )}
         </div>
       </div>
     </div>

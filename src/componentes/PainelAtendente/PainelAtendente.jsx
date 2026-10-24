@@ -13,14 +13,17 @@ import { CabecalhoPagina } from '../CabecalhoPagina';
 import './PainelAtendente.css';
 
 export function PainelAtendente() {
-  const { usuario } = useAutenticacao();
+  const { usuario, ehAdmin } = useAutenticacao();
 
   const [guiche, setGuiche] = useState(() => {
     return localStorage.getItem('guiche_operador') || null;
   });
 
   const [modalAberto, setModalAberto] = useState(() => {
-    return !localStorage.getItem('guiche_operador');
+    const guicheSalvo = localStorage.getItem('guiche_operador');
+    // Para operadores, abre obrigatoriamente se não tiver guichê.
+    // Para administradores (modo gestor), não abre automaticamente na entrada.
+    return !guicheSalvo && !ehAdmin;
   });
 
   const [guichesDisponiveis, setGuichesDisponiveis] = useState([]);
@@ -134,11 +137,11 @@ export function PainelAtendente() {
   }
 
   async function handleRechamar() {
-    const guicheFormatado = String(guiche || '01').padStart(2, '0');
-    const senhaAtual = atendimentosAtivos[guicheFormatado];
+    if (!guicheEfetivo) return;
+    const senhaAtual = atendimentosAtivos[guicheEfetivo];
     if (senhaAtual) {
       try {
-        await filaServico.rechamarSenha(senhaAtual.id, guicheFormatado);
+        await filaServico.rechamarSenha(senhaAtual.id, guicheEfetivo);
         await carregarEstadoFila();
       } catch (err) {
         alert(err?.message || 'Erro ao rechamar senha.');
@@ -147,8 +150,8 @@ export function PainelAtendente() {
   }
 
   async function handleIniciar() {
-    const guicheFormatado = String(guiche || '01').padStart(2, '0');
-    const senhaAtual = atendimentosAtivos[guicheFormatado];
+    if (!guicheEfetivo) return;
+    const senhaAtual = atendimentosAtivos[guicheEfetivo];
     if (senhaAtual) {
       try {
         await filaServico.iniciarAtendimento(senhaAtual.id);
@@ -160,8 +163,8 @@ export function PainelAtendente() {
   }
 
   async function handleFinalizar() {
-    const guicheFormatado = String(guiche || '01').padStart(2, '0');
-    const senhaAtual = atendimentosAtivos[guicheFormatado];
+    if (!guicheEfetivo) return;
+    const senhaAtual = atendimentosAtivos[guicheEfetivo];
     if (senhaAtual) {
       try {
         await filaServico.finalizarAtendimento(senhaAtual.id);
@@ -173,8 +176,8 @@ export function PainelAtendente() {
   }
 
   async function handleMarcarAusente() {
-    const guicheFormatado = String(guiche || '01').padStart(2, '0');
-    const senhaAtual = atendimentosAtivos[guicheFormatado];
+    if (!guicheEfetivo) return;
+    const senhaAtual = atendimentosAtivos[guicheEfetivo];
     if (senhaAtual) {
       try {
         await filaServico.marcarAusente(senhaAtual.id);
@@ -185,8 +188,8 @@ export function PainelAtendente() {
     }
   }
 
-  const guicheEfetivo = guiche ? String(guiche).padStart(2, '0') : '01';
-  const senhaDoGuiche = atendimentosAtivos[guicheEfetivo] || null;
+  const guicheEfetivo = guiche ? String(guiche).padStart(2, '0') : null;
+  const senhaDoGuiche = guicheEfetivo ? (atendimentosAtivos[guicheEfetivo] || null) : null;
   const temAtendimentoAtivo = Boolean(
     senhaDoGuiche && (senhaDoGuiche.status === 'chamado' || senhaDoGuiche.status === 'em_atendimento')
   );
@@ -206,7 +209,7 @@ export function PainelAtendente() {
             <div className="posto-info-bloco">
               <span className="posto-rotulo">POSTO DE TRABALHO</span>
               <span className="posto-nome">
-                {guiche ? `GUICHÊ ${guiche}` : 'NENHUM DEFINIDO'}
+                {guiche ? `GUICHÊ ${guiche}` : (ehAdmin ? 'MODO GESTOR (SEM GUICHÊ)' : 'NENHUM DEFINIDO')}
               </span>
             </div>
 
@@ -222,7 +225,7 @@ export function PainelAtendente() {
               }
             >
               <RefreshCw size={14} />
-              <span>Trocar de Guichê</span>
+              <span>{guiche ? 'Trocar de Guichê' : 'Definir Guichê'}</span>
             </button>
           </div>
         }
@@ -234,6 +237,8 @@ export function PainelAtendente() {
           <CardAtendimentoAtual
             senhaAtual={senhaDoGuiche}
             guiche={guicheEfetivo}
+            ehAdmin={ehAdmin}
+            onAbrirSelecaoGuiche={() => setModalAberto(true)}
             onRechamar={handleRechamar}
             onIniciar={handleIniciar}
             onFinalizar={handleFinalizar}
@@ -257,9 +262,10 @@ export function PainelAtendente() {
         <ModalSelecaoGuiche
           guicheAtual={guiche}
           onSelecionar={handleSelecionarGuiche}
-          podeFechar={!!guiche}
+          podeFechar={Boolean(guiche || ehAdmin)}
           onFechar={() => setModalAberto(false)}
           guichesDisponiveis={guichesDisponiveis}
+          ehAdmin={ehAdmin}
         />
       )}
     </div>

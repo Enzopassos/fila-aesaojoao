@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Volume2, Play, CheckCircle2, UserX, Clock, MapPin } from 'lucide-react';
+import { Volume2, Play, CheckCircle2, UserX, Clock, MapPin, Eye } from 'lucide-react';
 import './CardAtendimentoAtual.css';
 
 export function CardAtendimentoAtual({
   senhaAtual,
   guiche,
+  ehAdmin = false,
+  onAbrirSelecaoGuiche,
   onRechamar,
   onIniciar,
   onFinalizar,
@@ -33,6 +35,48 @@ export function CardAtendimentoAtual({
     const min = String(Math.floor(segundos / 60)).padStart(2, '0');
     const seg = String(segundos % 60).padStart(2, '0');
     return `${min}:${seg}`;
+  }
+
+  // Se nenhum guichê foi selecionado nesta sessão
+  if (!guiche) {
+    return (
+      <div className="card-atendimento-vazio">
+        <div className="vazio-conteudo">
+          <div className="icone-guiche-circulo" style={{ background: '#e0f2fe', color: '#0284c7' }}>
+            <Eye size={36} />
+          </div>
+          <h2 className="vazio-titulo">Modo de Acompanhamento</h2>
+          <p className="vazio-subtitulo">
+            {ehAdmin
+              ? 'Você está visualizando as filas e chamadas em tempo real sem ocupar nenhum guichê.'
+              : 'Nenhum guichê foi definido para esta sessão.'}
+          </p>
+          <button
+            type="button"
+            className="btn-definir-guiche-card"
+            onClick={onAbrirSelecaoGuiche}
+            style={{
+              marginTop: '1.2rem',
+              padding: '0.65rem 1.25rem',
+              backgroundColor: '#1e3a8a',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '8px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontSize: '0.9rem',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}
+          >
+            <MapPin size={16} />
+            <span>Definir Guichê para Atender</span>
+          </button>
+        </div>
+      </div>
+    );
   }
 
   // Se não houver ninguém em atendimento neste guichê

@@ -17,7 +17,12 @@ export function AutenticacaoProvider({ children }) {
       setPoliticas([]);
       setEhAdmin(false);
       setPerfil(null);
-      return;
+      return {
+        ehAdmin: false,
+        politicas: [],
+        vinculoAtivo: false,
+        perfil: null
+      };
     }
 
     try {
@@ -27,18 +32,20 @@ export function AutenticacaoProvider({ children }) {
           p_sistema_slug: SISTEMA_SLUG
         });
       } catch (errVinculo) {
-        console.warn('[Auth] Aviso ao garantir vínculo:', errVinculo.message);
+        console.warn('[Auth] Aviso ao garantir vínculo:', errVinculo?.message);
       }
 
       // 2. Verifica se é Admin através da RPC blindada
       let isAdmin = false;
       try {
-        const { data: adminResult } = await supabase.rpc('eh_admin_do_sistema', {
+        const { data: adminResult, error: adminError } = await supabase.rpc('eh_admin_do_sistema', {
           p_sistema_id: SISTEMA_ID
         });
-        isAdmin = !!adminResult;
+        if (!adminError && adminResult) {
+          isAdmin = true;
+        }
       } catch (errRpc) {
-        console.warn('[Auth] Aviso ao checar admin:', errRpc.message);
+        console.warn('[Auth] Aviso ao checar admin:', errRpc?.message);
       }
 
       // 3. Busca vínculo, status e políticas ativas
@@ -81,8 +88,21 @@ export function AutenticacaoProvider({ children }) {
         .maybeSingle();
 
       setPerfil(dadosPerfil);
+
+      return {
+        ehAdmin: ehAdminCalculado,
+        politicas: listaPoliticas,
+        vinculoAtivo: dadosVinculo ? dadosVinculo.ativo : true,
+        perfil: dadosPerfil
+      };
     } catch (erroGeral) {
       console.error('[Auth] Erro ao carregar permissões:', erroGeral);
+      return {
+        ehAdmin: false,
+        politicas: [],
+        vinculoAtivo: false,
+        perfil: null
+      };
     }
   }, []);
 
@@ -110,6 +130,7 @@ export function AutenticacaoProvider({ children }) {
     inicializarAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_evento, session) => {
+      if (!montado) return;
       setSessao(session);
       setUsuario(session?.user ?? null);
 
@@ -120,7 +141,7 @@ export function AutenticacaoProvider({ children }) {
         setEhAdmin(false);
         setPerfil(null);
       }
-      setCarregando(false);
+      if (montado) setCarregando(false);
     });
 
     return () => {
@@ -130,22 +151,44 @@ export function AutenticacaoProvider({ children }) {
   }, [carregarPermissoesDoSistema]);
 
   const entrar = useCallback(async (email, senha) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password: senha
-    });
-    if (error) throw error;
-    return data;
-  }, []);
+    setCarregando(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password: senha
+      });
+      if (error) throw error;
+
+      setSessao(data.session);
+      setUsuario(data.user);
+
+      let resultadoPermissoes = null;
+      if (data?.user) {
+        resultadoPermissoes = await carregarPermissoesDoSistema(data.user.id);
+      }
+
+      return {
+        ...data,
+        ehAdmin: resultadoPermissoes?.ehAdmin ?? false
+      };
+    } finally {
+      setCarregando(false);
+    }
+  }, [carregarPermissoesDoSistema]);
 
   const sair = useCallback(async () => {
-    await supabase.auth.signOut();
-    localStorage.removeItem('guiche_operador');
-    setSessao(null);
-    setUsuario(null);
-    setPerfil(null);
-    setPoliticas([]);
-    setEhAdmin(false);
+    setCarregando(true);
+    try {
+      await supabase.auth.signOut();
+      localStorage.removeItem('guiche_operador');
+      setSessao(null);
+      setUsuario(null);
+      setPerfil(null);
+      setPoliticas([]);
+      setEhAdmin(false);
+    } finally {
+      setCarregando(false);
+    }
   }, []);
 
   const temPolitica = useCallback((nomePolitica) => {
@@ -155,7 +198,12 @@ export function AutenticacaoProvider({ children }) {
 
   const recarregarPermissoes = useCallback(async () => {
     if (usuario?.id) {
-      await carregarPermissoesDoSistema(usuario.id);
+      setCarregando(true);
+      try {
+        await carregarPermissoesDoSistema(usuario.id);
+      } finally {
+        setCarregando(false);
+      }
     }
   }, [usuario, carregarPermissoesDoSistema]);
 

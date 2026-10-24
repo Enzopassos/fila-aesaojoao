@@ -94,7 +94,7 @@ export const MenuLateral = () => {
           className="menu-lateral-marca"
           title="Auto Escola São João"
           onClick={() => {
-            navigate('/atendimento');
+            navigate(ehAdmin ? '/relatorios' : '/atendimento');
             aoFecharMobile();
           }}
           style={{ cursor: 'pointer' }}

@@ -2,21 +2,27 @@ import React from 'react';
 import { History, CheckCircle, XCircle } from 'lucide-react';
 import './HistoricoGuiche.css';
 
-export function HistoricoGuiche({ historico, guiche }) {
-  const atendimentosDoGuiche = historico.filter((item) => item.guiche === guiche);
+export function HistoricoGuiche({ historico = [], guiche }) {
+  const atendimentos = guiche
+    ? historico.filter((item) => item.guiche === guiche)
+    : historico;
 
   return (
     <div className="historico-guiche-secao">
       <div className="historico-guiche-cabecalho">
         <History size={18} />
         <h3 className="historico-guiche-titulo">
-          HISTÓRICO DE HOJE (GUICHÊ {guiche}) — {atendimentosDoGuiche.length} FINALIZADOS
+          {guiche
+            ? `HISTÓRICO DE HOJE (GUICHÊ ${guiche}) — ${atendimentos.length} FINALIZADOS`
+            : `HISTÓRICO GERAL DE HOJE — ${atendimentos.length} FINALIZADOS`}
         </h3>
       </div>
 
-      {atendimentosDoGuiche.length === 0 ? (
+      {atendimentos.length === 0 ? (
         <div className="historico-vazio">
-          Nenhum atendimento concluído por este guichê hoje ainda.
+          {guiche
+            ? 'Nenhum atendimento concluído por este guichê hoje ainda.'
+            : 'Nenhum atendimento concluído no sistema hoje ainda.'}
         </div>
       ) : (
         <div className="tabela-container">
@@ -24,17 +30,19 @@ export function HistoricoGuiche({ historico, guiche }) {
             <thead>
               <tr>
                 <th>Senha</th>
+                {!guiche && <th>Mesa</th>}
                 <th>Serviço</th>
                 <th>Status</th>
               </tr>
             </thead>
             <tbody>
-              {atendimentosDoGuiche.slice(0, 5).map((item, index) => {
+              {atendimentos.slice(0, 5).map((item, index) => {
                 const ehConcluido = item.status === 'concluido';
 
                 return (
                   <tr key={item.id || index}>
                     <td className="coluna-senha">{item.codigo_formatado}</td>
+                    {!guiche && <td>Guichê {item.guiche || '01'}</td>}
                     <td>{item.tipo_servico}</td>
                     <td>
                       <span className={`status-badge ${ehConcluido ? 'status-ok' : 'status-aus'}`}>

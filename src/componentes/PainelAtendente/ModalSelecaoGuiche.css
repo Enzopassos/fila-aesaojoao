@@ -211,13 +211,37 @@
 .modal-selecao-rodape {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.8rem;
   font-size: 0.8rem;
   color: var(--cor-texto-mutado);
   border-top: 1px solid #f1f5f9;
   padding-top: 1rem;
   flex-shrink: 0;
+}
+
+.modal-selecao-rodape-dica {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-modo-gestor-dispensar {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  border-radius: var(--raio-borda-md);
+  padding: 0.45rem 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-modo-gestor-dispensar:hover {
+  background: #e2e8f0;
+  color: #0f172a;
 }
 
 @media (max-width: 640px) {

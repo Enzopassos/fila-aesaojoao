@@ -19,16 +19,21 @@ import './Login.css';
 export function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { entrar, autenticado, carregando: carregandoSessao } = useAutenticacao();
+  const { entrar, autenticado, ehAdmin, carregando: carregandoSessao } = useAutenticacao();
 
-  const destino = location.state?.from?.pathname || '/atendimento';
+  const obterDestino = (adminAtivo = ehAdmin) => {
+    if (location.state?.from?.pathname) {
+      return location.state.from.pathname;
+    }
+    return adminAtivo ? '/relatorios' : '/atendimento';
+  };
 
   // Redireciona caso o usuário já esteja autenticado
   useEffect(() => {
     if (!carregandoSessao && autenticado) {
-      navigate(destino, { replace: true });
+      navigate(obterDestino(ehAdmin), { replace: true });
     }
-  }, [autenticado, carregandoSessao, navigate, destino]);
+  }, [autenticado, carregandoSessao, ehAdmin, navigate]);
 
   // Estados dos campos de autenticação
   const [email, setEmail] = useState('');
@@ -77,8 +82,8 @@ export function Login() {
     setCarregando(true);
 
     try {
-      await entrar(emailLimpo, senha);
-      navigate(destino, { replace: true });
+      const respostaAuth = await entrar(emailLimpo, senha);
+      navigate(obterDestino(respostaAuth?.ehAdmin), { replace: true });
     } catch (erroGenerico) {
       console.error('Falha no processo de autenticação:', erroGenerico);
       setMensagemErro(traduzirMensagemErro(erroGenerico?.message));

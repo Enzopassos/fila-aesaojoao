@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AutenticacaoProvider } from './contextos/AutenticacaoContexto';
+import { AutenticacaoProvider, useAutenticacao } from './contextos/AutenticacaoContexto';
 import { RotaProtegida } from './componentes/RotaProtegida';
 import { Login } from './componentes/Login/Login';
 import { PainelTv } from './componentes/PainelTv/PainelTv';
@@ -11,6 +11,11 @@ import { GestaoCategorias } from './componentes/GestaoCategorias/GestaoCategoria
 import { GestaoUsuarios } from './componentes/GestaoUsuarios/GestaoUsuarios';
 import { Relatorios } from './componentes/Relatorios/Relatorios';
 import { AlterarSenha } from './componentes/AlterarSenha/AlterarSenha';
+
+function RedirecionadorInicial() {
+  const { ehAdmin } = useAutenticacao();
+  return <Navigate to={ehAdmin ? '/relatorios' : '/atendimento'} replace />;
+}
 
 export default function App() {
   return (
@@ -80,9 +85,23 @@ export default function App() {
               }
             />
 
-            {/* Redirecionamento Padrão */}
-            <Route path="/" element={<Navigate to="/atendimento" replace />} />
-            <Route path="*" element={<Navigate to="/atendimento" replace />} />
+            {/* Redirecionamento Padrão Sensível ao Papel */}
+            <Route
+              path="/"
+              element={
+                <RotaProtegida>
+                  <RedirecionadorInicial />
+                </RotaProtegida>
+              }
+            />
+            <Route
+              path="*"
+              element={
+                <RotaProtegida>
+                  <RedirecionadorInicial />
+                </RotaProtegida>
+              }
+            />
           </Route>
         </Routes>
       </BrowserRouter>
