@@ -1,0 +1,43 @@
+:root {
+  /* Fundo da Área Central (Miolo Claro) */
+  --cor-fundo: #f8fafc;
+  --cor-fundo-cartao: #ffffff;
+  --cor-fundo-destaque: #ffffff;
+  --cor-borda: #cbd5e1;
+  --cor-borda-forte: #94a3b8;
+
+  /* Moldura em 'L' (Barra Lateral e Barra Inferior Sólidas em Grafite/Marinho) */
+  --cor-moldura-l: #0f172a;
+  --cor-moldura-l-card: #1e293b;
+  --cor-moldura-l-borda: #334155;
+  --cor-moldura-l-texto: #ffffff;
+  --cor-moldura-l-mutado: #94a3b8;
+
+  /* Cores de Marca Sólidas */
+  --cor-marca-vermelho: #ed3237;
+  --cor-marca-vermelho-escuro: #b91c1c;
+  --cor-marca-vermelho-suave: #fee2e2;
+
+  --cor-marca-amarelo: #eab308;
+  --cor-marca-amarelo-escuro: #854d0e;
+  --cor-marca-amarelo-suave: #fef9c3;
+
+  --cor-marca-azul: #2563eb;
+  --cor-marca-verde: #059669;
+  --cor-marca-roxo: #7c3aed;
+
+  /* Tipografia do Miolo Claro */
+  --cor-texto-principal: #0f172a;
+  --cor-texto-secundario: #334155;
+  --cor-texto-mutado: #64748b;
+
+  --fonte-principal: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --fonte-mono: 'JetBrains Mono', monospace;
+
+  --raio-borda-sm: 8px;
+  --raio-borda-md: 12px;
+  --raio-borda-lg: 16px;
+  --raio-borda-xl: 20px;
+
+  --sombra-cartao: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+}

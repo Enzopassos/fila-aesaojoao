@@ -1,0 +1,113 @@
+.barra-lateral-container {
+  grid-area: lateral;
+  width: 430px;
+  height: 1080px;
+  /* Degradê leve e elegante: parte de um tom ardósia suave no topo até o grafite escuro embaixo */
+  background: linear-gradient(180deg, #2e3a4d 0%, #1e2736 50%, var(--cor-moldura-l) 100%);
+  border-right: 2px solid var(--cor-moldura-l-borda);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 36px 28px 36px 28px;
+  z-index: 10;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* Logo direta e fluida sobre o degradê suave */
+.logo-secao {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 10px;
+}
+
+.logo-imagem {
+  max-width: 90%;
+  max-height: 130px;
+  object-fit: contain;
+  /* Sombra sutil para destacar traços escuros sem necessidade de fundo */
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
+}
+
+/* Corpo Inferior: Relógio e Data sobre a base escura do degradê */
+.corpo-lateral-secao {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  margin-top: auto;
+}
+
+.relogio-card {
+  background-color: var(--cor-moldura-l-card);
+  border: 2px solid var(--cor-moldura-l-borda);
+  border-radius: 16px;
+  padding: 24px 16px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.relogio-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.icone-relogio {
+  width: 22px;
+  height: 22px;
+  color: var(--cor-marca-vermelho);
+  flex-shrink: 0;
+}
+
+.etiqueta-relogio {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  color: var(--cor-moldura-l-mutado);
+}
+
+.hora-digital {
+  font-family: var(--fonte-mono);
+  font-size: 48px;
+  font-weight: 900;
+  color: var(--cor-moldura-l-texto);
+  letter-spacing: 0.04em;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.data-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background-color: var(--cor-moldura-l-card);
+  border: 2px solid var(--cor-moldura-l-borda);
+  border-radius: 12px;
+  padding: 16px 14px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+}
+
+.icone-calendario {
+  width: 22px;
+  height: 22px;
+  color: var(--cor-marca-vermelho);
+  flex-shrink: 0;
+}
+
+.data-extenso {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--cor-moldura-l-texto);
+  line-height: 1.3;
+}

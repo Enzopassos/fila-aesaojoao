@@ -1,0 +1,112 @@
+.categorias-tabela-card {
+  background: #ffffff;
+  border: 2px solid #cbd5e1;
+  border-radius: var(--raio-borda-lg);
+  box-shadow: var(--sombra-cartao);
+  overflow: hidden;
+}
+
+.tabela-categorias {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.tabela-categorias th {
+  background: #f8fafc;
+  color: var(--cor-texto-mutado);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 1rem 1.4rem;
+  text-align: left;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.tabela-categorias td {
+  padding: 1.2rem 1.4rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: var(--cor-texto-principal);
+}
+
+.prefixo-badge {
+  font-family: var(--fonte-mono);
+  font-size: 1.3rem;
+  font-weight: 900;
+  background: #0f172a;
+  color: #ffffff;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--raio-borda-sm);
+  display: inline-block;
+}
+
+.categoria-nome-coluna {
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+
+.badge-prioridade-legal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.badge-normal-fila {
+  display: inline-block;
+  background: #f1f5f9;
+  color: var(--cor-texto-secundario);
+  border: 1px solid #cbd5e1;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.badge-status-ativo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #065f46;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.btn-editar-cat {
+  background: #f1f5f9;
+  color: var(--cor-texto-principal);
+  border: 1px solid #cbd5e1;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--raio-borda-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.15s;
+}
+
+.btn-editar-cat:hover {
+  background: #e2e8f0;
+}
+
+.campo-form-checkbox {
+  margin: 0.5rem 0;
+}
+
+.checkbox-rotulo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--cor-texto-principal);
+  cursor: pointer;
+}

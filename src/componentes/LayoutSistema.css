@@ -1,0 +1,26 @@
+.layout-sistema-wrapper {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #f1f5f9;
+}
+
+.layout-sistema-conteudo-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #f1f5f9;
+}
+
+.layout-sistema-conteudo {
+  flex: 1;
+  height: calc(100vh - 60px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}

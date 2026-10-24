@@ -1,0 +1,81 @@
+.historico-guiche-secao {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--raio-borda-lg);
+  padding: 1.4rem;
+  box-shadow: var(--sombra-cartao);
+}
+
+.historico-guiche-cabecalho {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--cor-texto-secundario);
+  margin-bottom: 1rem;
+}
+
+.historico-guiche-titulo {
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.historico-vazio {
+  font-size: 0.85rem;
+  color: var(--cor-texto-mutado);
+  text-align: center;
+  padding: 1.5rem;
+}
+
+.tabela-container {
+  overflow-x: auto;
+}
+
+.tabela-atendimentos {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.tabela-atendimentos th {
+  text-align: left;
+  padding: 0.6rem 0.8rem;
+  color: var(--cor-texto-mutado);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+.tabela-atendimentos td {
+  padding: 0.8rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: var(--cor-texto-principal);
+}
+
+.coluna-senha {
+  font-family: var(--fonte-mono);
+  font-weight: 800;
+  color: var(--cor-texto-principal);
+  font-size: 1.05rem;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+}
+
+.status-ok {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-aus {
+  background: #fee2e2;
+  color: #991b1b;
+}

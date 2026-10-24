@@ -1,0 +1,214 @@
+.card-atendimento-vazio {
+  background: #ffffff;
+  border: 2px dashed #cbd5e1;
+  border-radius: var(--raio-borda-xl);
+  padding: 3rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-shadow: var(--sombra-cartao);
+  min-height: 320px;
+}
+
+.vazio-conteudo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  max-width: 450px;
+}
+
+.icone-guiche-circulo {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: var(--cor-marca-vermelho);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #e2e8f0;
+}
+
+.vazio-titulo {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--cor-texto-principal);
+}
+
+.vazio-subtitulo {
+  font-size: 0.95rem;
+  color: var(--cor-texto-mutado);
+  line-height: 1.4;
+}
+
+
+/* Card Ativo */
+.card-atendimento-container {
+  background: #ffffff;
+  border: 2px solid #cbd5e1;
+  border-radius: var(--raio-borda-xl);
+  padding: 1.8rem 2.2rem;
+  box-shadow: var(--sombra-cartao);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1.5rem;
+  min-height: 320px;
+}
+
+.atendimento-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.categoria-pill {
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  background: #f1f5f9;
+  color: var(--cor-texto-principal);
+  border: 1px solid #cbd5e1;
+  padding: 0.4rem 1rem;
+  border-radius: var(--raio-borda-sm);
+}
+
+.status-atendimento-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 800;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  letter-spacing: 0.05em;
+}
+
+.status-chamando {
+  background: #fee2e2;
+  color: var(--cor-marca-vermelho);
+  border: 1px solid #fecaca;
+}
+
+.status-em-atendimento {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.ponto-status {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* Corpo */
+.atendimento-corpo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+}
+
+.senha-bloco {
+  display: flex;
+  flex-direction: column;
+}
+
+.rotulo-mini {
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  color: var(--cor-texto-mutado);
+}
+
+.senha-codigo {
+  font-family: var(--fonte-mono);
+  font-size: 4.8rem;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--cor-texto-principal);
+  letter-spacing: 0.04em;
+  margin: 0.2rem 0;
+}
+
+.guiche-indicador {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--cor-texto-secundario);
+}
+
+.cronometro-bloco {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--raio-borda-md);
+  padding: 1.2rem 1.6rem;
+  text-align: right;
+}
+
+.cronometro-topo {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--cor-texto-mutado);
+  margin-bottom: 0.4rem;
+}
+
+.tempo-display {
+  font-family: var(--fonte-mono);
+  font-size: 2.4rem;
+  font-weight: 900;
+  color: var(--cor-texto-principal);
+  line-height: 1;
+}
+
+/* Ações */
+.atendimento-acoes-grade {
+  display: grid;
+  grid-template-columns: 1.2fr 1.5fr 1fr;
+  gap: 1rem;
+}
+
+.btn-acao {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.9rem 1.2rem;
+  border-radius: var(--raio-borda-md);
+  font-size: 0.95rem;
+  font-weight: 800;
+  transition: transform 0.15s, opacity 0.15s;
+}
+
+.btn-acao:hover {
+  transform: translateY(-2px);
+  opacity: 0.95;
+}
+
+.btn-rechamar {
+  background: #334155;
+  color: #ffffff;
+}
+
+.btn-iniciar {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.btn-finalizar {
+  background: #059669;
+  color: #ffffff;
+}
+
+.btn-ausente {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+}

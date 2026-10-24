@@ -1,0 +1,275 @@
+/* ==========================================================================
+   MENU LATERAL (SIDEBAR CORPORATIVA)
+   Identidade: Fundo Azul Marinho Sólido (#0F172A), Borda Sutil (#1E293B)
+   100% Cores Sólidas, Logo em Destaque Centralizada e Navegação Limpa
+   ========================================================================== */
+
+.menu-lateral {
+  width: 260px;
+  min-width: 260px;
+  background-color: #0f172a;
+  color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border-right: 1px solid #1e293b;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+/* Modo Desktop Recolhido (apenas ícones) */
+.menu-lateral.desktop-recolhida {
+  width: 76px;
+  min-width: 76px;
+}
+
+.menu-lateral.desktop-recolhida .menu-lateral-cabecalho {
+  padding: 1rem 0.5rem;
+  min-height: 72px;
+  justify-content: center;
+}
+
+.menu-lateral.desktop-recolhida .menu-lateral-marca {
+  justify-content: center;
+}
+
+.menu-lateral.desktop-recolhida .menu-lateral-logo-box {
+  width: 100%;
+  height: 38px;
+}
+
+.menu-lateral.desktop-recolhida .menu-lateral-item-btn {
+  justify-content: center;
+  padding: 0.65rem 0;
+}
+
+.menu-lateral.desktop-recolhida .menu-lateral-secao-rotulo {
+  text-align: center;
+  padding: 0 0 0.5rem 0;
+  font-size: 0.65rem;
+}
+
+.menu-lateral.desktop-recolhida .menu-lateral-btn-recolher {
+  justify-content: center;
+  padding: 0.5rem 0;
+}
+
+/* --------------------------------------------------------------------------
+   1. CABEÇALHO DA MARCA (LOGO ALINHADA COM OS ITENS DE NAVEGAÇÃO)
+   -------------------------------------------------------------------------- */
+.menu-lateral-cabecalho {
+  min-height: 95px;
+  padding: 1.25rem 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border-bottom: 1px solid #1e293b;
+  box-sizing: border-box;
+}
+
+.menu-lateral-marca {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.menu-lateral-logo-box {
+  width: 100%;
+  height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.menu-lateral-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.menu-lateral-btn-fechar-mobile {
+  display: none;
+  position: absolute;
+  right: 0.85rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  padding: 0.4rem;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.menu-lateral-btn-fechar-mobile:hover {
+  color: #ffffff;
+  background-color: #1e293b;
+}
+
+/* --------------------------------------------------------------------------
+   2. ÁREA DE NAVEGAÇÃO
+   -------------------------------------------------------------------------- */
+.menu-lateral-nav {
+  flex: 1;
+  padding: 1.15rem 0.75rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.menu-lateral-secao-rotulo {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+  padding: 0 0.65rem 0.5rem;
+  white-space: nowrap;
+}
+
+.menu-lateral-lista {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+}
+
+.menu-lateral-item-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: 8px;
+  color: #94a3b8;
+  font-size: 0.88rem;
+  font-weight: 500;
+  text-align: left;
+  position: relative;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.menu-lateral-item-icone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  color: inherit;
+}
+
+.menu-lateral-item-btn:hover:not(.item-desabilitado):not(.item-ativo) {
+  background-color: #1e293b;
+  color: #ffffff;
+}
+
+/* Item Ativo (100% Sólido, sem sombra difusa) */
+.menu-lateral-item-btn.item-ativo {
+  background-color: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.menu-lateral-item-btn.item-ativo .menu-lateral-item-icone {
+  color: #ffffff;
+}
+
+/* Item Desabilitado (Em breve) */
+.menu-lateral-item-btn.item-desabilitado {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.badge-em-breve {
+  margin-left: auto;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  background-color: #1e293b;
+  color: #94a3b8;
+  letter-spacing: 0.04em;
+}
+
+/* --------------------------------------------------------------------------
+   3. RODAPÉ DA SIDEBAR: RECOLHER / EXPANDIR
+   -------------------------------------------------------------------------- */
+.menu-lateral-rodape {
+  padding: 0.85rem;
+  border-top: 1px solid #1e293b;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* Botão de Recolher/Expandir */
+.menu-lateral-btn-recolher {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 6px;
+  color: #94a3b8;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background-color: transparent;
+  border: 1px solid #1e293b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.menu-lateral-btn-recolher:hover {
+  color: #ffffff;
+  background-color: #1e293b;
+}
+
+/* --------------------------------------------------------------------------
+   4. RESPONSIVIDADE MOBILE (< 900px)
+   -------------------------------------------------------------------------- */
+@media (max-width: 899px) {
+  .menu-lateral {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    transform: translateX(-100%);
+    width: 270px;
+    min-width: 270px;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.4);
+  }
+
+  .menu-lateral.mobile-aberta {
+    transform: translateX(0);
+  }
+
+  .menu-lateral.desktop-recolhida {
+    width: 270px;
+    min-width: 270px;
+  }
+
+  .menu-lateral-btn-fechar-mobile {
+    display: flex;
+  }
+
+  .menu-lateral-btn-recolher {
+    display: none;
+  }
+}
+

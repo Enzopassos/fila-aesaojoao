@@ -1,0 +1,54 @@
+.painel-tv-palco-externo {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: var(--cor-moldura-l);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.painel-tv-canvas-fixo {
+  width: 1920px;
+  height: 1080px;
+  min-width: 1920px;
+  min-height: 1080px;
+  max-width: 1920px;
+  max-height: 1080px;
+  transform-origin: center center;
+  overflow: hidden;
+  position: relative;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.painel-tv-grid {
+  width: 1920px;
+  height: 1080px;
+  display: grid;
+  grid-template-columns: 430px 1490px;
+  grid-template-rows: 1004px 76px;
+  grid-template-areas:
+    "lateral principal"
+    "lateral letreiro";
+  overflow: hidden;
+  background-color: var(--cor-fundo);
+  position: relative;
+}
+
+.area-principal-painel {
+  grid-area: principal;
+  width: 1490px;
+  height: 1004px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 24px 28px;
+  gap: 20px;
+  overflow: hidden;
+  background-color: var(--cor-fundo);
+  box-sizing: border-box;
+}

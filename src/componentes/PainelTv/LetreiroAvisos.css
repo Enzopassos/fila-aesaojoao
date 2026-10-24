@@ -1,0 +1,47 @@
+.letreiro-container {
+  grid-area: letreiro;
+  width: 1490px;
+  height: 76px;
+  background-color: var(--cor-moldura-l);
+  border-top: 2px solid var(--cor-moldura-l-borda);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  position: relative;
+  z-index: 5;
+  box-sizing: border-box;
+}
+
+.letreiro-trilho {
+  flex: 1;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+.letreiro-conteudo {
+  display: flex;
+  white-space: nowrap;
+  animation: marqueeContinuo 45s linear infinite;
+  gap: 48px;
+}
+
+.letreiro-item {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  font-size: 22px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.letreiro-divisor {
+  color: var(--cor-marca-amarelo);
+  font-size: 24px;
+}
+
+@keyframes marqueeContinuo {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}

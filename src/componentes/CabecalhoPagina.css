@@ -1,0 +1,91 @@
+/* ==========================================================================
+   CABEÇALHO PADRONIZADO DE PÁGINAS
+   Estrutura: Ícone à esquerda, Título à direita e Subtítulo abaixo
+   Cores Sólidas: Título (#0F172A), Subtítulo (#64748B), Ícone (#2563EB)
+   ========================================================================== */
+
+.cabecalho-pagina {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  margin-bottom: 1.75rem;
+  flex-wrap: wrap;
+}
+
+.cabecalho-pagina-lado-esquerdo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.cabecalho-pagina-icone-container {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border-radius: 10px;
+  background-color: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.cabecalho-pagina-textos {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.cabecalho-pagina-titulo {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.cabecalho-pagina-subtitulo {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: #64748b;
+  margin: 4px 0 0 0;
+  line-height: 1.3;
+}
+
+/* Área de Ações Específicas da Página */
+.cabecalho-pagina-acoes {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* Responsividade Mobile (< 768px) */
+@media (max-width: 767px) {
+  .cabecalho-pagina {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .cabecalho-pagina-lado-esquerdo {
+    align-items: flex-start;
+  }
+
+  .cabecalho-pagina-titulo {
+    font-size: 1.25rem;
+  }
+
+  .cabecalho-pagina-acoes {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}

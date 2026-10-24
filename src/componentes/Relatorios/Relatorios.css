@@ -1,0 +1,516 @@
+.relatorios-container {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  box-sizing: border-box;
+}
+
+/* ========================================================================== */
+/* 1. FILTROS CONTEXTUAIS                                                     */
+/* ========================================================================== */
+
+.relatorios-barra-filtros {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  width: 100%;
+  box-sizing: border-box;
+  flex-wrap: wrap;
+}
+
+/* Seletor de Período em Pílulas */
+.periodo-seletor-grupo {
+  display: inline-flex;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 0.35rem;
+  gap: 0.35rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.btn-periodo-opcao {
+  background: transparent;
+  border: none;
+  padding: 0.6rem 1.15rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #64748b;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+
+.btn-periodo-opcao:hover {
+  color: #0f172a;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.btn-periodo-opcao.periodo-ativo {
+  background: #0f172a;
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.15);
+}
+
+/* Seletor de Atendente Expandido */
+.filtro-atendente-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 0.6rem 1rem;
+  min-width: 280px;
+  flex: 1;
+  max-width: 440px;
+  box-sizing: border-box;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.filtro-atendente-wrapper:focus-within {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.filtro-atendente-icone {
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+.select-atendente {
+  width: 100%;
+  background: transparent;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #0f172a;
+  cursor: pointer;
+  outline: none;
+}
+
+.select-atendente option {
+  font-weight: 500;
+  color: #0f172a;
+  background-color: #ffffff;
+}
+
+/* Banner de Contexto Individual */
+.banner-filtro-individual {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: var(--raio-borda-md, 8px);
+  padding: 0.85rem 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #1e40af;
+  font-size: 0.9rem;
+}
+
+.banner-filtro-individual strong {
+  color: #1d4ed8;
+}
+
+.btn-limpar-filtro-usuario {
+  background: #ffffff;
+  border: 1px solid #93c5fd;
+  color: #1d4ed8;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--raio-borda-sm, 6px);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-limpar-filtro-usuario:hover {
+  background: #dbeafe;
+}
+
+/* ========================================================================== */
+/* 2. CARDS DE INDICADORES EXECUTIVOS (KPIs)                                  */
+/* ========================================================================== */
+.relatorios-kpis-grade {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.4rem;
+}
+
+.kpi-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--raio-borda-lg, 12px);
+  padding: 1.4rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.07);
+}
+
+.kpi-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.kpi-rotulo {
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.kpi-icone-caixa {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--raio-borda-sm, 6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kpi-azul .kpi-icone-caixa { background: #dbeafe; color: #2563eb; }
+.kpi-verde .kpi-icone-caixa { background: #dcfce7; color: #16a34a; }
+.kpi-laranja .kpi-icone-caixa { background: #fef3c7; color: #d97706; }
+.kpi-roxo .kpi-icone-caixa { background: #ede9fe; color: #7c3aed; }
+
+.kpi-valor-principal {
+  font-family: var(--fonte-mono, monospace);
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: #0f172a;
+  line-height: 1;
+}
+
+.kpi-detalhe-rodape {
+  font-size: 0.8rem;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.badge-saneado {
+  background: #ecfdf5;
+  color: #047857;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+/* ========================================================================== */
+/* 3. GRÁFICOS ANALÍTICOS NATIVOS EM SVG & CSS                                */
+/* ========================================================================== */
+.relatorios-graficos-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.6rem;
+  align-items: stretch;
+}
+
+.card-grafico-relatorio {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--raio-borda-lg, 12px);
+  padding: 1.6rem 1.8rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+
+.grafico-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 0.9rem;
+}
+
+.grafico-titulo-grupo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.grafico-icone-header {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.grafico-titulo {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.grafico-subtitulo {
+  font-size: 0.82rem;
+  color: #64748b;
+  margin-top: 0.15rem;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Gráfico Donut (Anel SVG)                                                   */
+/* -------------------------------------------------------------------------- */
+.donut-layout-container {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  min-height: 220px;
+}
+
+.donut-svg-wrapper {
+  position: relative;
+  width: 170px;
+  height: 170px;
+  flex-shrink: 0;
+}
+
+.donut-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.donut-circulo-base {
+  stroke: #f1f5f9;
+}
+
+.donut-segmento {
+  transition: stroke-dasharray 0.4s ease, stroke-dashoffset 0.4s ease;
+}
+
+.donut-centro-info {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+
+.donut-centro-rotulo {
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #64748b;
+  letter-spacing: 0.05em;
+}
+
+.donut-centro-total {
+  font-family: var(--fonte-mono, monospace);
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #0f172a;
+  line-height: 1.1;
+}
+
+/* Legendas do Donut com Barras de Proporção */
+.donut-legendas-lista {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.donut-legenda-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.donut-legenda-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.88rem;
+}
+
+.donut-legenda-nome {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.donut-ponto-cor {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.donut-legenda-valores {
+  font-family: var(--fonte-mono, monospace);
+  font-weight: 700;
+  color: #475569;
+  font-size: 0.82rem;
+}
+
+.donut-barra-trilho {
+  width: 100%;
+  height: 6px;
+  background: #f1f5f9;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.donut-barra-preenchimento {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Gráfico de Colunas / Barras Verticais de Guichês                           */
+/* -------------------------------------------------------------------------- */
+.barras-grafico-container {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  gap: 1.2rem;
+  height: 220px;
+  padding-top: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.coluna-guiche-grupo {
+  flex: 1;
+  max-width: 90px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.coluna-guiche-valor-topo {
+  font-family: var(--fonte-mono, monospace);
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1;
+}
+
+.coluna-guiche-barra-wrapper {
+  display: flex;
+  align-items: flex-end;
+  height: 150px;
+  width: 100%;
+  justify-content: center;
+}
+
+.barra-coluna-guiche {
+  width: 42px;
+  min-height: 6px;
+  border-radius: 6px 6px 0 0;
+  background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+  transition: height 0.4s cubic-bezier(0.16, 1, 0.3, 1), filter 0.15s ease;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+  cursor: pointer;
+}
+
+.barra-coluna-guiche:hover {
+  filter: brightness(1.15);
+  transform: translateY(-2px);
+}
+
+.coluna-guiche-rotulo {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.3rem;
+}
+
+/* Estado Vazio de Gráfico */
+.grafico-vazio-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  color: #94a3b8;
+  padding: 3rem 1rem;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+/* ========================================================================== */
+/* RESPONSIVIDADE                                                             */
+/* ========================================================================== */
+@media (max-width: 1200px) {
+  .relatorios-kpis-grade {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .relatorios-graficos-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .relatorios-container {
+    padding: 1.2rem;
+  }
+
+  .relatorios-barra-filtros {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.85rem;
+  }
+
+  .periodo-seletor-grupo {
+    display: flex;
+    overflow-x: auto;
+    width: 100%;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.4rem;
+  }
+
+  .filtro-atendente-wrapper {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .relatorios-kpis-grade {
+    grid-template-columns: 1fr;
+  }
+
+  .donut-layout-container {
+    flex-direction: column;
+    align-items: center;
+  }
+}

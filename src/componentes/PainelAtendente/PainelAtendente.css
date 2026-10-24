@@ -1,0 +1,110 @@
+.painel-atendente-container {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  box-sizing: border-box;
+}
+
+/* Posto de Atendimento Fixo */
+.posto-atendimento-fixo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: #ffffff;
+  border: 2px solid #cbd5e1;
+  padding: 0.65rem 1.2rem;
+  border-radius: var(--raio-borda-md);
+  box-shadow: var(--sombra-cartao);
+}
+
+.icone-monitor-box {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--raio-borda-sm);
+  background: #0f172a;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.posto-info-bloco {
+  display: flex;
+  flex-direction: column;
+}
+
+.posto-rotulo {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--cor-texto-mutado);
+  letter-spacing: 0.1em;
+}
+
+.posto-nome {
+  font-family: var(--fonte-mono);
+  font-weight: 900;
+  font-size: 1.15rem;
+  color: var(--cor-texto-principal);
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+}
+
+.btn-trocar-mesa {
+  background: #f1f5f9;
+  color: var(--cor-texto-secundario);
+  border: 1px solid #cbd5e1;
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--raio-borda-sm);
+  font-size: 0.8rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-left: 0.5rem;
+}
+
+.btn-trocar-mesa:hover:not(:disabled) {
+  background: #e2e8f0;
+  color: var(--cor-texto-principal);
+  border-color: #94a3b8;
+}
+
+.btn-trocar-mesa:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #94a3b8;
+}
+
+/* Grid Lado a Lado */
+.atendente-grid-lado-a-lado {
+  display: grid;
+  grid-template-columns: 58% 42%;
+  gap: 1.8rem;
+  align-items: start;
+}
+
+.coluna-operacao-esquerda {
+  display: flex;
+  flex-direction: column;
+  gap: 1.6rem;
+}
+
+.coluna-filas-direita {
+  display: flex;
+  flex-direction: column;
+  gap: 1.6rem;
+}
+
+@media (max-width: 1200px) {
+  .atendente-grid-lado-a-lado {
+    grid-template-columns: 1fr;
+  }
+}

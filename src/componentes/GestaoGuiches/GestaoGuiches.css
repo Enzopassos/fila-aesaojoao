@@ -1,0 +1,235 @@
+.gestao-pagina-container {
+  padding: 2rem 2.5rem;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  box-sizing: border-box;
+}
+
+.btn-adicionar-principal {
+  background: var(--cor-marca-vermelho);
+  color: #ffffff;
+  padding: 0.75rem 1.4rem;
+  border-radius: var(--raio-borda-md);
+  font-weight: 800;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 12px rgba(237, 50, 55, 0.25);
+  transition: transform 0.15s, background-color 0.15s;
+}
+
+.btn-adicionar-principal:hover {
+  transform: translateY(-2px);
+  background: var(--cor-marca-vermelho-escuro);
+}
+
+.guiches-grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.guiche-card-gestao {
+  background: #ffffff;
+  border: 2px solid #cbd5e1;
+  border-radius: var(--raio-borda-lg);
+  padding: 1.6rem;
+  box-shadow: var(--sombra-cartao);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1.2rem;
+  transition: border-color 0.15s;
+}
+
+.guiche-card-gestao.inativo {
+  opacity: 0.65;
+  background: #f8fafc;
+}
+
+.guiche-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.guiche-numero-pill {
+  font-family: var(--fonte-mono);
+  font-weight: 900;
+  font-size: 1.1rem;
+  color: #ffffff;
+  background: #0f172a;
+  padding: 0.35rem 0.8rem;
+  border-radius: var(--raio-borda-sm);
+  letter-spacing: 0.05em;
+}
+
+.badge-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+}
+
+.status-ativo {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-inativo {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.guiche-nome {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--cor-texto-principal);
+  margin-bottom: 0.4rem;
+}
+
+.guiche-desc {
+  font-size: 0.88rem;
+  color: var(--cor-texto-mutado);
+  line-height: 1.4;
+}
+
+.guiche-card-acoes {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 1rem;
+}
+
+.btn-acao-secundario {
+  background: #f1f5f9;
+  color: var(--cor-texto-principal);
+  border: 1px solid #cbd5e1;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--raio-borda-sm);
+  transition: all 0.15s;
+}
+
+.btn-acao-secundario:hover {
+  background: #e2e8f0;
+}
+
+.icones-acoes {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.btn-icone {
+  background: transparent;
+  color: var(--cor-texto-mutado);
+  padding: 0.45rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.btn-icone:hover {
+  background: #f1f5f9;
+  color: var(--cor-texto-principal);
+}
+
+.btn-icone-perigo:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal-container {
+  background: #ffffff;
+  border-radius: var(--raio-borda-lg);
+  padding: 2.2rem;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+}
+
+.modal-titulo {
+  font-size: 1.35rem;
+  font-weight: 800;
+  margin-bottom: 1.5rem;
+  color: var(--cor-texto-principal);
+}
+
+.modal-formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.campo-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.campo-form label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--cor-texto-secundario);
+}
+
+.campo-form input {
+  padding: 0.75rem 0.9rem;
+  border-radius: var(--raio-borda-sm);
+  border: 1px solid #cbd5e1;
+  font-family: inherit;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.campo-form input:focus {
+  border-color: var(--cor-marca-azul);
+}
+
+.modal-botoes {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.btn-cancelar {
+  background: #f1f5f9;
+  color: var(--cor-texto-secundario);
+  padding: 0.65rem 1.2rem;
+  border-radius: var(--raio-borda-sm);
+  font-weight: 700;
+}
+
+.btn-salvar {
+  background: var(--cor-marca-vermelho);
+  color: #ffffff;
+  padding: 0.65rem 1.4rem;
+  border-radius: var(--raio-borda-sm);
+  font-weight: 800;
+}
