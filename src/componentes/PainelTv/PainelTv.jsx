@@ -36,13 +36,13 @@ export function PainelTv() {
     atualizarEscala();
     window.addEventListener('resize', atualizarEscala);
 
-    if (window.visualViewport) {
+    if (window.visualViewport && typeof window.visualViewport.addEventListener === 'function') {
       window.visualViewport.addEventListener('resize', atualizarEscala);
     }
 
     return () => {
       window.removeEventListener('resize', atualizarEscala);
-      if (window.visualViewport) {
+      if (window.visualViewport && typeof window.visualViewport.removeEventListener === 'function') {
         window.visualViewport.removeEventListener('resize', atualizarEscala);
       }
     };

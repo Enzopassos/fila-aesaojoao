@@ -7,7 +7,8 @@ export default defineConfig({
     react(),
     legacy({
       targets: ['chrome >= 49', 'edge >= 79', 'safari >= 10', 'firefox >= 54', 'not IE 11'],
-      additionalLegacyPolyfills: ['regenerator-runtime/runtime']
+      additionalLegacyPolyfills: ['regenerator-runtime/runtime'],
+      renderModernChunks: false
     })
   ],
   server: {
