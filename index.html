@@ -9,6 +9,93 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
   </head>
   <body>
+    <!-- Captura de Erros e Diagnóstico de Baixo Nível (Compatível com Smart TVs e Motores Legados) -->
+    <script>
+      (function() {
+        var parametros = (typeof window !== 'undefined' && window.location && window.location.search)
+          ? new URLSearchParams(window.location.search)
+          : null;
+        var modoDepuracao = parametros && (parametros.get('debug') === '1' || parametros.get('debug') === 'true');
+
+        function exibirDiagnosticoNaTela(titulo, mensagem, detalhe) {
+          var container = document.getElementById('painel-diagnostico-sistema');
+          if (!container) {
+            container = document.createElement('div');
+            container.id = 'painel-diagnostico-sistema';
+            container.style.position = 'fixed';
+            container.style.top = '0';
+            container.style.left = '0';
+            container.style.width = '100vw';
+            container.style.minHeight = '100vh';
+            container.style.backgroundColor = '#0b0f19';
+            container.style.color = '#f8fafc';
+            container.style.fontFamily = 'monospace';
+            container.style.fontSize = '14px';
+            container.style.padding = '24px';
+            container.style.zIndex = '9999999';
+            container.style.boxSizing = 'border-box';
+            container.style.overflow = 'auto';
+            document.body.appendChild(container);
+          }
+
+          var informacoesMotor = navigator.userAgent;
+          var resolucao = window.innerWidth + 'x' + window.innerHeight;
+
+          container.innerHTML =
+            '<div style="max-width:860px;margin:20px auto;background:#1e293b;border:1px solid #ef4444;border-radius:12px;padding:24px;box-shadow:0 10px 30px rgba(0,0,0,0.5);">' +
+              '<h2 style="color:#ef4444;margin:0 0 12px 0;">⚠️ ' + titulo + '</h2>' +
+              '<p style="color:#94a3b8;margin:0 0 16px 0;font-size:13px;">O navegador da TV/Dispositivo encontrou uma falha de inicialização:</p>' +
+              '<div style="background:#0f172a;border-radius:8px;padding:16px;margin-bottom:16px;border:1px solid #334155;">' +
+                '<strong style="color:#38bdf8;display:block;margin-bottom:6px;">Falha:</strong>' +
+                '<div style="color:#f87171;word-break:break-word;">' + (mensagem || 'Erro desconhecido') + '</div>' +
+                (detalhe ? '<pre style="color:#cbd5e1;font-size:12px;margin:12px 0 0 0;white-space:pre-wrap;word-break:break-all;">' + detalhe + '</pre>' : '') +
+              '</div>' +
+              '<div style="background:#0f172a;border-radius:8px;padding:16px;border:1px solid #334155;font-size:12px;color:#94a3b8;">' +
+                '<strong style="color:#38bdf8;display:block;margin-bottom:6px;">Dados do Dispositivo / Navegador:</strong>' +
+                '<div style="word-break:break-all;color:#e2e8f0;margin-bottom:6px;">' + informacoesMotor + '</div>' +
+                '<div>Resolução da Janela: ' + resolucao + '</div>' +
+              '</div>' +
+              '<div style="margin-top:18px;text-align:right;">' +
+                '<button onclick="window.location.reload()" style="background:#2563eb;color:#fff;border:none;padding:10px 18px;border-radius:6px;cursor:pointer;font-weight:bold;">Recarregar</button>' +
+              '</div>' +
+            '</div>';
+        }
+
+        window.onerror = function(mensagem, arquivo, linha, coluna, erro) {
+          var detalhe = (erro && erro.stack) ? erro.stack : (arquivo + ' (linha ' + linha + ', col ' + coluna + ')');
+          exibirDiagnosticoNaTela('Falha de Script no Navegador', mensagem, detalhe);
+          return false;
+        };
+
+        window.onunhandledrejection = function(evento) {
+          var motivo = evento.reason;
+          var msg = (motivo && motivo.message) ? motivo.message : String(motivo);
+          var detalhe = (motivo && motivo.stack) ? motivo.stack : '';
+          exibirDiagnosticoNaTela('Exceção Assíncrona Não Tratada', msg, detalhe);
+        };
+
+        if (modoDepuracao) {
+          window.addEventListener('load', function() {
+            var badge = document.createElement('div');
+            badge.style.position = 'fixed';
+            badge.style.bottom = '12px';
+            badge.style.left = '12px';
+            badge.style.zIndex = '99999';
+            badge.style.backgroundColor = 'rgba(15, 23, 42, 0.9)';
+            badge.style.color = '#38bdf8';
+            badge.style.fontFamily = 'monospace';
+            badge.style.fontSize = '12px';
+            badge.style.padding = '8px 12px';
+            badge.style.borderRadius = '6px';
+            badge.style.border = '1px solid #38bdf8';
+            badge.style.pointerEvents = 'none';
+            badge.innerHTML = 'DEBUG ATIVO | Resolução: ' + window.innerWidth + 'x' + window.innerHeight;
+            document.body.appendChild(badge);
+          });
+        }
+      })();
+    </script>
+
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

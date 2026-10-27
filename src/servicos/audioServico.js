@@ -86,28 +86,53 @@ function tocarGongoChamada() {
 
 function falarTexto(texto) {
   return new Promise((resolve) => {
-    if (!('speechSynthesis' in window)) {
+    try {
+      if (
+        typeof window === 'undefined' ||
+        !('speechSynthesis' in window) ||
+        typeof window.SpeechSynthesisUtterance === 'undefined'
+      ) {
+        resolve();
+        return;
+      }
+
+      window.speechSynthesis.cancel();
+
+      const enunciado = new SpeechSynthesisUtterance(texto);
+      enunciado.lang = 'pt-BR';
+      enunciado.rate = 0.95;
+      enunciado.pitch = 1.05;
+
+      const vozes = typeof window.speechSynthesis.getVoices === 'function'
+        ? window.speechSynthesis.getVoices()
+        : [];
+      const vozPt = Array.isArray(vozes)
+        ? vozes.find((v) => v.lang === 'pt-BR' || (v.lang && v.lang.startsWith('pt'))) || null
+        : null;
+
+      if (vozPt) {
+        enunciado.voice = vozPt;
+      }
+
+      let finalizado = false;
+      const concluir = () => {
+        if (!finalizado) {
+          finalizado = true;
+          resolve();
+        }
+      };
+
+      enunciado.onend = concluir;
+      enunciado.onerror = concluir;
+
+      // Timeout defensivo caso o motor de voz da TV trave ou não dispare onend
+      setTimeout(concluir, 4000);
+
+      window.speechSynthesis.speak(enunciado);
+    } catch (erro) {
+      console.warn('[Audio] Síntese de voz indisponível ou incompatível no navegador:', erro);
       resolve();
-      return;
     }
-
-    window.speechSynthesis.cancel();
-
-    const enunciado = new SpeechSynthesisUtterance(texto);
-    enunciado.lang = 'pt-BR';
-    enunciado.rate = 0.95;
-    enunciado.pitch = 1.05;
-
-    const vozes = window.speechSynthesis.getVoices();
-    const vozPt = vozes.find((v) => v.lang === 'pt-BR' || v.lang.startsWith('pt')) || null;
-    if (vozPt) {
-      enunciado.voice = vozPt;
-    }
-
-    enunciado.onend = () => resolve();
-    enunciado.onerror = () => resolve();
-
-    window.speechSynthesis.speak(enunciado);
   });
 }
 
