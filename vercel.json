@@ -1,4 +1,5 @@
 {
+  "installCommand": "npm install --prefix web",
   "outputDirectory": "dist",
   "rewrites": [
     {
