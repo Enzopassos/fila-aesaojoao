@@ -1,0 +1,138 @@
+.painel-tv-palco-externo {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: var(--cor-moldura-l);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.painel-tv-canvas-fixo {
+  width: 1920px;
+  height: 1080px;
+  min-width: 1920px;
+  min-height: 1080px;
+  max-width: 1920px;
+  max-height: 1080px;
+  transform-origin: center center;
+  overflow: hidden;
+  position: relative;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.painel-tv-grid {
+  width: 1920px;
+  height: 1080px;
+  display: grid;
+  grid-template-columns: 430px 1490px;
+  grid-template-rows: 1004px 76px;
+  grid-template-areas:
+    "lateral principal"
+    "lateral letreiro";
+  overflow: hidden;
+  background-color: var(--cor-fundo);
+  position: relative;
+}
+
+.area-principal-painel {
+  grid-area: principal;
+  width: 1490px;
+  height: 1004px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 24px 28px;
+  gap: 20px;
+  overflow: hidden;
+  background-color: var(--cor-fundo);
+  box-sizing: border-box;
+}
+
+/* Alerta flutuante de ativação de áudio da TV */
+.painel-tv-alerta-audio {
+  position: absolute;
+  top: 24px;
+  right: 28px;
+  z-index: 1000;
+  background: rgba(15, 23, 42, 0.94);
+  backdrop-filter: blur(10px);
+  border: 2px solid var(--cor-marca-amarelo, #eab308);
+  color: #ffffff;
+  padding: 14px 24px;
+  border-radius: var(--raio-borda-lg, 16px);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  animation: pulsoSuave 2.2s infinite ease-in-out;
+  transition: transform 0.2s ease;
+}
+
+.painel-tv-alerta-audio:hover {
+  transform: scale(1.03);
+}
+
+.painel-tv-icone-alerta {
+  color: var(--cor-marca-amarelo, #eab308);
+  flex-shrink: 0;
+}
+
+.painel-tv-alerta-texto {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.painel-tv-alerta-texto span {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.painel-tv-alerta-texto small {
+  font-size: 0.85rem;
+  color: var(--cor-moldura-l-mutado, #94a3b8);
+  margin-top: 2px;
+}
+
+/* Botão discreto para teste da voz Correios */
+.painel-tv-botao-teste-audio {
+  position: absolute;
+  top: 24px;
+  right: 28px;
+  z-index: 1000;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  padding: 8px 16px;
+  border-radius: var(--raio-borda-md, 12px);
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.painel-tv-botao-teste-audio:hover {
+  background: rgba(37, 99, 235, 0.9);
+  border-color: #2563eb;
+  transform: translateY(-2px);
+}
+
+@keyframes pulsoSuave {
+  0%, 100% {
+    box-shadow: 0 10px 30px rgba(234, 179, 8, 0.25);
+  }
+  50% {
+    box-shadow: 0 10px 40px rgba(234, 179, 8, 0.55);
+  }
+}

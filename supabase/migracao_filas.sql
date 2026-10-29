@@ -6,7 +6,7 @@
 -- ==============================================================================
 
 -- 1. FUNÇÃO AUXILIAR GLOBAL: tem_politica_no_sistema
--- Verifica se o usuário atual tem alguma das políticas especificadas ou é admin
+-- Verifica se o usuário atual tem alguma das políticas especificadas ou é admin/super_admin
 CREATE OR REPLACE FUNCTION public.tem_politica_no_sistema(p_sistema_id UUID, p_politicas_permitidas TEXT[])
 RETURNS BOOLEAN
 LANGUAGE plpgsql
@@ -15,6 +15,10 @@ STABLE
 SET search_path = public
 AS $$
 BEGIN
+    IF public.eh_super_admin() THEN
+        RETURN true;
+    END IF;
+
     RETURN EXISTS (
         SELECT 1 
         FROM public.core_usuario_politicas up

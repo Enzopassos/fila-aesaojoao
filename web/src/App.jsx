@@ -4,6 +4,7 @@ import { AutenticacaoProvider, useAutenticacao } from './contextos/AutenticacaoC
 import { RotaProtegida } from './componentes/RotaProtegida';
 import { Login } from './componentes/Login/Login';
 import { PainelTv } from './componentes/PainelTv/PainelTv';
+import { Totem } from './componentes/Totem/Totem';
 import { LayoutSistema } from './componentes/LayoutSistema';
 import { PainelAtendente } from './componentes/PainelAtendente/PainelAtendente';
 import { GestaoGuiches } from './componentes/GestaoGuiches/GestaoGuiches';
@@ -22,8 +23,9 @@ export default function App() {
     <AutenticacaoProvider>
       <BrowserRouter>
         <Routes>
-          {/* 1. Painel TV 100% isolado (Sem autenticação e sem menu) */}
+          {/* 1. Telas 100% isoladas (Sem autenticação e sem menu administrativo) */}
           <Route path="/tv" element={<PainelTv />} />
+          <Route path="/totem" element={<Totem />} />
 
           {/* 2. Tela de Autenticação */}
           <Route path="/login" element={<Login />} />

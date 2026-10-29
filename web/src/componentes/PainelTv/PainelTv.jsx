@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Volume2, VolumeX } from 'lucide-react';
 import { BarraLateral } from './BarraLateral';
 import { SenhaDestaque } from './SenhaDestaque';
 import { HistoricoSenhas } from './HistoricoSenhas';
@@ -6,7 +7,8 @@ import { LetreiroAvisos } from './LetreiroAvisos';
 import { filaServico } from '../../servicos/filaServico';
 import {
   anunciarChamada,
-  inicializarContextoAudio
+  inicializarContextoAudio,
+  carregarVozesDisponiveis
 } from '../../servicos/audioServico';
 import { inscreverEventos } from '../../servicos/canalSincronizacao';
 import './PainelTv.css';
@@ -25,9 +27,10 @@ export function PainelTv() {
   const [senhaDestaque, setSenhaDestaque] = useState(null);
   const [ultimasChamadas, setUltimasChamadas] = useState([]);
   const [emAnimacao, setEmAnimacao] = useState(false);
+  const [audioDesbloqueado, setAudioDesbloqueado] = useState(false);
   const timerAnimacao = useRef(null);
 
-  // Mantém a proporção exata ao dar zoom in/out ou alterar a resolução
+  // Mantém a proporção exata ao redimensionar a tela da TV
   useEffect(() => {
     function atualizarEscala() {
       setEscala(calcularEscala());
@@ -48,21 +51,29 @@ export function PainelTv() {
     };
   }, []);
 
-  // Desbloqueio passivo do áudio do navegador na primeira interação
+  // Desbloqueia o subsistema de áudio e pré-carrega as vozes do navegador
+  const desbloquearAudio = useCallback(async () => {
+    await inicializarContextoAudio();
+    await carregarVozesDisponiveis();
+    setAudioDesbloqueado(true);
+  }, []);
+
+  // Ouvinte de interação para desbloqueio passivo (clique ou toque do usuário)
   useEffect(() => {
-    function desbloquear() {
-      inicializarContextoAudio();
-      window.removeEventListener('click', desbloquear);
-      window.removeEventListener('keydown', desbloquear);
+    async function lidarInteracao() {
+      await desbloquearAudio();
+      window.removeEventListener('click', lidarInteracao);
+      window.removeEventListener('keydown', lidarInteracao);
     }
-    window.addEventListener('click', desbloquear, { once: true });
-    window.addEventListener('keydown', desbloquear, { once: true });
+
+    window.addEventListener('click', lidarInteracao, { once: true });
+    window.addEventListener('keydown', lidarInteracao, { once: true });
 
     return () => {
-      window.removeEventListener('click', desbloquear);
-      window.removeEventListener('keydown', desbloquear);
+      window.removeEventListener('click', lidarInteracao);
+      window.removeEventListener('keydown', lidarInteracao);
     };
-  }, []);
+  }, [desbloquearAudio]);
 
   const dispararAlertaVisualESonoro = useCallback((senha) => {
     if (!senha) return;
@@ -72,7 +83,10 @@ export function PainelTv() {
     }
     setEmAnimacao(true);
 
-    anunciarChamada(senha.codigo_formatado, senha.guiche || senha.guiche_numero || '01');
+    anunciarChamada(
+      senha.codigo_formatado,
+      senha.guiche || senha.guiche_numero || '01'
+    );
 
     timerAnimacao.current = setTimeout(() => {
       setEmAnimacao(false);
@@ -110,7 +124,6 @@ export function PainelTv() {
         setSenhaDestaque(senhaFormatada);
         dispararAlertaVisualESonoro(senhaFormatada);
 
-        // Atualiza a lista de últimas chamadas cronológicas excluindo a que está no destaque
         const ultimasAtualizadas = await filaServico.obterUltimasChamadasCronologicas(novaSenha.id, 4);
         setUltimasChamadas(ultimasAtualizadas);
       } else if (novaSenha.status === 'em_atendimento') {
@@ -120,7 +133,7 @@ export function PainelTv() {
       }
     });
 
-    // 2. Inscrição local via BroadcastChannel (comunicação imediata entre abas)
+    // 2. Inscrição local via BroadcastChannel (comunicação imediata entre abas do mesmo navegador)
     const cancelarBroadcast = inscreverEventos(async (evento) => {
       if (evento.tipo === 'CHAMAR_SENHA' || evento.tipo === 'RECHAMAR_SENHA') {
         const { senha, senhaDestaque: destaqueLocal } = evento.cargaUtil || {};
@@ -145,8 +158,41 @@ export function PainelTv() {
     };
   }, [carregarDadosIniciais, dispararAlertaVisualESonoro]);
 
+  const handleTestarChamada = (e) => {
+    e.stopPropagation();
+    anunciarChamada(
+      senhaDestaque?.codigo_formatado || 'A001',
+      senhaDestaque?.guiche || senhaDestaque?.guiche_numero || '01'
+    );
+  };
+
   return (
     <div className="painel-tv-palco-externo">
+      {/* Alerta de desbloqueio de áudio caso o navegador tenha suspendido por autoplay policy */}
+      {!audioDesbloqueado ? (
+        <button
+          type="button"
+          className="painel-tv-alerta-audio"
+          onClick={desbloquearAudio}
+        >
+          <VolumeX size={26} className="painel-tv-icone-alerta" />
+          <div className="painel-tv-alerta-texto">
+            <span>Áudio da TV aguardando ativação</span>
+            <small>Toque em qualquer lugar da tela para habilitar o som</small>
+          </div>
+        </button>
+      ) : (
+        <button
+          type="button"
+          className="painel-tv-botao-teste-audio"
+          onClick={handleTestarChamada}
+          title="Clique para testar a voz estilo Correios"
+        >
+          <Volume2 size={18} />
+          <span>Testar Voz Correios</span>
+        </button>
+      )}
+
       <div
         className="painel-tv-canvas-fixo"
         style={{ transform: `scale(${escala})` }}
