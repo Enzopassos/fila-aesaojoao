@@ -8,7 +8,9 @@ import { filaServico } from '../../servicos/filaServico';
 import {
   anunciarChamada,
   inicializarContextoAudio,
-  carregarVozesDisponiveis
+  preCarregarTodosAudios,
+  inscreverDiagnosticoAudio,
+  obterEstatisticasAudio
 } from '../../servicos/audioServico';
 import { inscreverEventos } from '../../servicos/canalSincronizacao';
 import './PainelTv.css';
@@ -28,8 +30,34 @@ export function PainelTv() {
   const [ultimasChamadas, setUltimasChamadas] = useState([]);
   const [emAnimacao, setEmAnimacao] = useState(false);
   const [audioDesbloqueado, setAudioDesbloqueado] = useState(false);
+  const [logsDiagnostico, setLogsDiagnostico] = useState([]);
+  const [exibirDiagnostico, setExibirDiagnostico] = useState(true);
+  const [estatisticas, setEstatisticas] = useState({
+    estado: 'inativo',
+    taxaAmostragem: 0,
+    totalEmMemoria: 0,
+    totalDisponivel: 38
+  });
+
   const timerAnimacao = useRef(null);
   const ultimaChamadaProcessadaRef = useRef({ chave: '', carimboTempo: 0 });
+
+  // Inscrição no canal de diagnóstico em tempo real e pré-carregamento imediato dos áudios
+  useEffect(() => {
+    const cancelarDiagnostico = inscreverDiagnosticoAudio((item) => {
+      setLogsDiagnostico((anteriores) => [...anteriores.slice(-7), item]);
+      setEstatisticas(obterEstatisticasAudio());
+    });
+
+    // Pré-carrega todos os 38 clips em background assim que o painel é montado
+    preCarregarTodosAudios().then(() => {
+      setEstatisticas(obterEstatisticasAudio());
+    });
+
+    return () => {
+      cancelarDiagnostico();
+    };
+  }, []);
 
   // Mantém a proporção exata ao redimensionar a tela da TV
   useEffect(() => {
@@ -52,14 +80,15 @@ export function PainelTv() {
     };
   }, []);
 
-  // Desbloqueia o subsistema de áudio e pré-carrega as vozes do navegador
+  // Desbloqueia o subsistema de áudio e pré-carrega as vozes
   const desbloquearAudio = useCallback(async () => {
     await inicializarContextoAudio();
-    await carregarVozesDisponiveis();
+    await preCarregarTodosAudios();
+    setEstatisticas(obterEstatisticasAudio());
     setAudioDesbloqueado(true);
   }, []);
 
-  // Ouvinte de interação para desbloqueio passivo (clique ou toque do usuário)
+  // Ouvinte de interação para desbloqueio passivo (controle remoto ou toque)
   useEffect(() => {
     async function lidarInteracao() {
       await desbloquearAudio();
@@ -185,7 +214,7 @@ export function PainelTv() {
   }, [carregarDadosIniciais, processarChamadaComDeduplicacao]);
 
   const handleTestarChamada = (e) => {
-    e.stopPropagation();
+    if (e) e.stopPropagation();
     anunciarChamada(
       senhaDestaque?.codigo_formatado || 'A001',
       senhaDestaque?.guiche || senhaDestaque?.guiche_numero || '01'
@@ -194,8 +223,8 @@ export function PainelTv() {
 
   return (
     <div className="painel-tv-palco-externo">
-      {/* Alerta de desbloqueio de áudio caso o navegador tenha suspendido por autoplay policy */}
-      {!audioDesbloqueado ? (
+      {/* Alerta de desbloqueio passivo caso a TV exija interação inicial */}
+      {!audioDesbloqueado && (
         <button
           type="button"
           className="painel-tv-alerta-audio"
@@ -204,20 +233,56 @@ export function PainelTv() {
           <VolumeX size={26} className="painel-tv-icone-alerta" />
           <div className="painel-tv-alerta-texto">
             <span>Áudio da TV aguardando ativação</span>
-            <small>Toque em qualquer lugar da tela para habilitar o som</small>
+            <small>Clique em qualquer lugar da tela ou controle remoto</small>
           </div>
         </button>
-      ) : (
-        <button
-          type="button"
-          className="painel-tv-botao-teste-audio"
-          onClick={handleTestarChamada}
-          title="Clique para testar a voz estilo Correios"
-        >
-          <Volume2 size={18} />
-          <span>Testar Voz Correios</span>
-        </button>
       )}
+
+      {/* Console Flutuante de Diagnóstico e Calibração de Áudio da TV */}
+      <div className="painel-tv-diagnostico-flutuante">
+        <div className="painel-tv-diagnostico-topo">
+          <div className="painel-tv-diagnostico-badge">
+            <span className={`status-ponto ${estatisticas.estado === 'running' ? 'ativo' : 'inativo'}`} />
+            <span className="texto-status">
+              Tizen: {estatisticas.estado} ({estatisticas.taxaAmostragem}Hz) | {estatisticas.totalEmMemoria}/{estatisticas.totalDisponivel} clips
+            </span>
+          </div>
+
+          <div className="painel-tv-diagnostico-acoes">
+            <button
+              type="button"
+              className="painel-tv-btn-mini teste"
+              onClick={handleTestarChamada}
+              title="Testar anúncio de voz da TV"
+            >
+              <Volume2 size={15} />
+              <span>Testar Voz</span>
+            </button>
+            <button
+              type="button"
+              className="painel-tv-btn-mini toggle"
+              onClick={() => setExibirDiagnostico(!exibirDiagnostico)}
+            >
+              <span>{exibirDiagnostico ? 'Ocultar' : 'Logs'}</span>
+            </button>
+          </div>
+        </div>
+
+        {exibirDiagnostico && (
+          <div className="painel-tv-diagnostico-logs">
+            {logsDiagnostico.length === 0 ? (
+              <div className="painel-tv-log-linha info">Aguardando eventos...</div>
+            ) : (
+              logsDiagnostico.map((log) => (
+                <div key={log.id} className={`painel-tv-log-linha ${log.nivel}`}>
+                  <span className="log-hora">{log.carimbo}</span>
+                  <span className="log-msg">{log.mensagem}</span>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+      </div>
 
       <div
         className="painel-tv-canvas-fixo"

@@ -2,13 +2,41 @@
  * Serviço de Áudio e Chamada de Fila (Padrão Correios / Alta Compatibilidade)
  * Utiliza o Web Audio API com amostras gravadas de voz feminina em português,
  * garantindo funcionamento idêntico e consistente em qualquer sistema operacional
- * (Linux, Smart TVs, Android, Windows, Mac), sem depender de pacotes TTS externos.
+ * (Linux, Smart TVs Samsung Tizen 2019-2022, Android, Windows, Mac), sem depender de pacotes TTS externos.
  */
 
 let contextoAudio = null;
 let audioHabilitado = true;
 const cacheBuffersAudio = new Map();
 let anuncioAtualId = 0;
+const ouvintesDiagnostico = new Set();
+
+export const TODAS_AS_CHAVES_AUDIO = [
+  'senha', 'guiche',
+  '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+  'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
+  'u', 'v', 'w', 'x', 'y', 'z'
+];
+
+/**
+ * Inscreve um ouvinte para receber mensagens de diagnóstico de áudio em tempo real.
+ */
+export function inscreverDiagnosticoAudio(callback) {
+  ouvintesDiagnostico.add(callback);
+  return () => ouvintesDiagnostico.delete(callback);
+}
+
+function notificarDiagnostico(mensagem, nivel = 'info') {
+  const agora = new Date().toLocaleTimeString('pt-BR');
+  const payload = { id: Math.random(), carimbo: agora, mensagem, nivel };
+  console.log(`[AudioTv][${nivel.toUpperCase()}] ${mensagem}`);
+  ouvintesDiagnostico.forEach((cb) => {
+    try {
+      cb(payload);
+    } catch {}
+  });
+}
 
 /**
  * Cria ou recupera a instância compartilhada de AudioContext.
@@ -24,52 +52,111 @@ function obterContextoAudio() {
 }
 
 /**
- * Decodifica o ArrayBuffer de áudio garantindo compatibilidade universal com
- * navegadores modernos (baseados em Promise) e legados/Smart TVs (baseados em Callbacks).
- * Inclui timeout de proteção para evitar congelamento caso a TV falhe silenciosamente.
+ * Decodifica diretamente dados PCM de um arquivo WAV canônico (16-bit LE, 48kHz mono)
+ * diretamente para um AudioBuffer usando pura aritmética em JavaScript.
+ * Bypassa 100% dos decodificadores de hardware/SO do Tizen, eliminando congelamentos
+ * e erros de decodeAudioData em Smart TVs antigas.
  */
-function decodificarAudioCompativel(ctx, arrayBuffer) {
-  return new Promise((resolve, reject) => {
+function decodificarWavPuro(ctx, arrayBuffer) {
+  try {
+    const visualizador = new DataView(arrayBuffer);
+    if (visualizador.byteLength < 44) return null;
+
+    const riff = String.fromCharCode(
+      visualizador.getUint8(0), visualizador.getUint8(1),
+      visualizador.getUint8(2), visualizador.getUint8(3)
+    );
+    const wave = String.fromCharCode(
+      visualizador.getUint8(8), visualizador.getUint8(9),
+      visualizador.getUint8(10), visualizador.getUint8(11)
+    );
+    if (riff !== 'RIFF' || wave !== 'WAVE') return null;
+
+    let deslocamento = 12;
+    let canais = 1;
+    let taxaAmostragem = 48000;
+    let bitsPorAmostra = 16;
+    let deslocamentoDados = -1;
+    let tamanhoDados = 0;
+
+    while (deslocamento < visualizador.byteLength - 8) {
+      const idChunk = String.fromCharCode(
+        visualizador.getUint8(deslocamento), visualizador.getUint8(deslocamento + 1),
+        visualizador.getUint8(deslocamento + 2), visualizador.getUint8(deslocamento + 3)
+      );
+      const tamanhoChunk = visualizador.getUint32(deslocamento + 4, true);
+
+      if (idChunk === 'fmt ') {
+        canais = visualizador.getUint16(deslocamento + 10, true);
+        taxaAmostragem = visualizador.getUint32(deslocamento + 12, true);
+        bitsPorAmostra = visualizador.getUint16(deslocamento + 22, true);
+      } else if (idChunk === 'data') {
+        deslocamentoDados = deslocamento + 8;
+        tamanhoDados = tamanhoChunk;
+        break;
+      }
+      deslocamento += 8 + tamanhoChunk;
+    }
+
+    if (deslocamentoDados === -1 || bitsPorAmostra !== 16 || canais < 1) return null;
+
+    const totalAmostras = Math.floor(tamanhoDados / (2 * canais));
+    const bufferAudio = ctx.createBuffer(canais, totalAmostras, taxaAmostragem);
+
+    for (let c = 0; c < canais; c++) {
+      const canalDados = bufferAudio.getChannelData(c);
+      let indiceByte = deslocamentoDados + (c * 2);
+      for (let i = 0; i < totalAmostras; i++) {
+        canalDados[i] = visualizador.getInt16(indiceByte, true) / 32768.0;
+        indiceByte += 2 * canais;
+      }
+    }
+
+    return bufferAudio;
+  } catch (err) {
+    console.warn('[Audio] Falha no decodificador PCM puro:', err);
+    return null;
+  }
+}
+
+/**
+ * Fallback padrão usando ctx.decodeAudioData para arquivos MP3.
+ */
+function decodificarAudioNativo(ctx, arrayBuffer) {
+  return new Promise((resolve) => {
     let finalizado = false;
     const copiaBuffer = arrayBuffer.slice(0);
 
-    // Timeout de 1500ms: impede que motores de Smart TV travem a Promise em silêncio
-    const timerLimite = setTimeout(() => {
+    const timer = setTimeout(() => {
       if (!finalizado) {
         finalizado = true;
-        reject(new Error('Timeout na decodificação de áudio'));
+        resolve(null);
       }
-    }, 1500);
+    }, 1200);
 
-    const concluirSucesso = (bufferDecodificado) => {
+    const concluirSucesso = (buffer) => {
       if (!finalizado) {
         finalizado = true;
-        clearTimeout(timerLimite);
-        resolve(bufferDecodificado);
+        clearTimeout(timer);
+        resolve(buffer);
       }
     };
 
-    const concluirErro = (erro) => {
+    const concluirErro = () => {
       if (!finalizado) {
         finalizado = true;
-        clearTimeout(timerLimite);
-        reject(erro || new Error('Falha ao decodificar áudio'));
+        clearTimeout(timer);
+        resolve(null);
       }
     };
 
     try {
-      const promessaOuVazio = ctx.decodeAudioData(
-        copiaBuffer,
-        concluirSucesso,
-        concluirErro
-      );
-
-      // Suporte a navegadores que retornam Promise mesmo com callbacks informados
-      if (promessaOuVazio && typeof promessaOuVazio.then === 'function') {
-        promessaOuVazio.then(concluirSucesso).catch(concluirErro);
+      const promessa = ctx.decodeAudioData(copiaBuffer, concluirSucesso, concluirErro);
+      if (promessa && typeof promessa.then === 'function') {
+        promessa.then(concluirSucesso).catch(concluirErro);
       }
-    } catch (erroSincrono) {
-      concluirErro(erroSincrono);
+    } catch {
+      concluirErro();
     }
   });
 }
@@ -83,9 +170,11 @@ export async function inicializarContextoAudio() {
     if (ctx && ctx.state === 'suspended') {
       await ctx.resume();
     }
-    return Boolean(ctx && ctx.state === 'running');
+    const ativo = Boolean(ctx && ctx.state === 'running');
+    notificarDiagnostico(`AudioContext: ${ctx?.state || 'inativo'} (${ctx?.sampleRate || 0} Hz)`, ativo ? 'sucesso' : 'aviso');
+    return ativo;
   } catch (e) {
-    console.warn('[Audio] Erro ao inicializar AudioContext:', e);
+    notificarDiagnostico(`Erro ao inicializar AudioContext: ${e.message}`, 'erro');
     return false;
   }
 }
@@ -102,46 +191,120 @@ export function definirStatusAudio(ativo) {
   return audioHabilitado;
 }
 
-/**
- * Pré-carrega os áudios essenciais na memória para eliminar latência durante as chamadas.
- */
-export async function preCarregarAudiosEssenciais() {
-  const chavesBasicas = [
-    'senha', 'guiche',
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-    'a', 'b', 'c', 'd', 'e', 'p', 's'
-  ];
+export function obterEstatisticasAudio() {
+  const ctx = obterContextoAudio();
+  return {
+    estado: ctx?.state || 'inativo',
+    taxaAmostragem: ctx?.sampleRate || 0,
+    totalEmMemoria: cacheBuffersAudio.size,
+    totalDisponivel: TODAS_AS_CHAVES_AUDIO.length
+  };
+}
 
-  try {
-    await Promise.all(chavesBasicas.map((chave) => obterAudioBuffer(chave)));
-  } catch (e) {
-    console.warn('[Audio] Falha parcial no pré-carregamento dos áudios:', e);
+/**
+ * Carrega e decodifica o arquivo de áudio de uma palavra, letra ou número.
+ * Prioridade 1: WAV PCM 48kHz decodificado matematicamente em JavaScript puro (zero dependência de SO/codecs).
+ * Prioridade 2: WAV decodificado nativamente via Web Audio.
+ * Prioridade 3: MP3 decodificado nativamente.
+ */
+async function obterAudioBuffer(nomeArquivo) {
+  const chave = String(nomeArquivo).toLowerCase().trim();
+  if (cacheBuffersAudio.has(chave)) {
+    return cacheBuffersAudio.get(chave);
   }
+
+  const ctx = obterContextoAudio();
+  if (!ctx) return null;
+
+  // 1. Tenta carregar WAV canônico e decodificar via aritmética JS pura (100% seguro em Smart TVs)
+  try {
+    const urlWav = `/audio/${chave}.wav`;
+    const respostaWav = await fetch(urlWav);
+    if (respostaWav.ok) {
+      const tipo = respostaWav.headers.get('content-type') || '';
+      if (!tipo.includes('text/html')) {
+        const arrayBuffer = await respostaWav.arrayBuffer();
+        
+        // Decodificação matemática direta do PCM (ignora codecs do SO)
+        const bufferPuro = decodificarWavPuro(ctx, arrayBuffer);
+        if (bufferPuro) {
+          cacheBuffersAudio.set(chave, bufferPuro);
+          return bufferPuro;
+        }
+
+        // Se falhar o parser puro, tenta a decodificação nativa do browser
+        const bufferNativo = await decodificarAudioNativo(ctx, arrayBuffer);
+        if (bufferNativo) {
+          cacheBuffersAudio.set(chave, bufferNativo);
+          return bufferNativo;
+        }
+      }
+    }
+  } catch (erroWav) {
+    console.warn(`[Audio] Erro ao carregar WAV ${chave}:`, erroWav);
+  }
+
+  // 2. Fallback para MP3 comprimido
+  try {
+    const urlMp3 = `/audio/${chave}.mp3`;
+    const respostaMp3 = await fetch(urlMp3);
+    if (respostaMp3.ok) {
+      const tipo = respostaMp3.headers.get('content-type') || '';
+      if (!tipo.includes('text/html')) {
+        const arrayBufferMp3 = await respostaMp3.arrayBuffer();
+        const bufferMp3 = await decodificarAudioNativo(ctx, arrayBufferMp3);
+        if (bufferMp3) {
+          cacheBuffersAudio.set(chave, bufferMp3);
+          return bufferMp3;
+        }
+      }
+    }
+  } catch (erroMp3) {
+    console.warn(`[Audio] Erro ao carregar MP3 ${chave}:`, erroMp3);
+  }
+
+  return null;
 }
 
 /**
- * Mantido por compatibilidade de interface.
+ * Pré-carrega todos os áudios na memória RAM para eliminar atrasos durante chamadas.
  */
-export async function carregarVozesDisponiveis() {
-  await preCarregarAudiosEssenciais();
-  return [];
+export async function preCarregarTodosAudios() {
+  const ctx = obterContextoAudio();
+  if (!ctx) return 0;
+
+  notificarDiagnostico(`Pré-carregando ${TODAS_AS_CHAVES_AUDIO.length} clips de áudio na memória...`);
+  let carregados = 0;
+
+  await Promise.all(
+    TODAS_AS_CHAVES_AUDIO.map(async (chave) => {
+      try {
+        const buf = await obterAudioBuffer(chave);
+        if (buf) carregados++;
+      } catch {}
+    })
+  );
+
+  notificarDiagnostico(
+    `Memória de áudio: ${carregados}/${TODAS_AS_CHAVES_AUDIO.length} clips prontos`,
+    carregados >= 30 ? 'sucesso' : 'aviso'
+  );
+  return carregados;
 }
 
-/**
- * Pausa utilitária assíncrona.
- */
-function aguardar(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+export const preCarregarAudiosEssenciais = preCarregarTodosAudios;
 
 /**
- * Toca o gongo bimodal característico de aeroportos e agências dos Correios.
+ * Toca o gongo bimodal harmônico (D5 -> A5) gerado matematicamente via osciladores senoidais.
+ * Funciona de forma 100% nativa sem dependência de arquivos externos.
  */
 export function tocarGongoChamada() {
   return new Promise(async (resolve) => {
     try {
+      notificarDiagnostico('Iniciando gongo...');
       const ctx = obterContextoAudio();
       if (!ctx) {
+        notificarDiagnostico('Gongo cancelado: Contexto ausente', 'erro');
         resolve();
         return;
       }
@@ -149,48 +312,47 @@ export function tocarGongoChamada() {
       if (ctx.state === 'suspended') {
         try {
           await ctx.resume();
-        } catch (e) {
-          console.warn('[Audio] Falha ao resumir AudioContext no gongo:', e);
-        }
+        } catch {}
       }
 
       if (ctx.state !== 'running') {
+        notificarDiagnostico(`Gongo abortado: Contexto em estado ${ctx.state}`, 'aviso');
         resolve();
         return;
       }
 
       const agora = ctx.currentTime;
 
-      // 1º Tom - Ré 5 (587.33 Hz)
+      // 1ª Nota: Ré 5 (D5 ~ 587.33 Hz)
       const osc1 = ctx.createOscillator();
       const ganho1 = ctx.createGain();
       osc1.type = 'sine';
       osc1.frequency.setValueAtTime(587.33, agora);
-      ganho1.gain.setValueAtTime(0.25, agora);
-      ganho1.gain.exponentialRampToValueAtTime(0.001, agora + 0.35);
-
+      ganho1.gain.setValueAtTime(0.001, agora);
+      ganho1.gain.exponentialRampToValueAtTime(0.35, agora + 0.04);
+      ganho1.gain.exponentialRampToValueAtTime(0.0001, agora + 0.75);
       osc1.connect(ganho1);
       ganho1.connect(ctx.destination);
       osc1.start(agora);
-      osc1.stop(agora + 0.35);
+      osc1.stop(agora + 0.75);
 
-      // 2º Tom - Lá 5 (880.00 Hz)
+      // 2ª Nota: Lá 5 (A5 ~ 880.00 Hz)
       const osc2 = ctx.createOscillator();
       const ganho2 = ctx.createGain();
       osc2.type = 'sine';
-      osc2.frequency.setValueAtTime(880.00, agora + 0.2);
-      ganho2.gain.setValueAtTime(0.001, agora);
-      ganho2.gain.setValueAtTime(0.3, agora + 0.2);
+      osc2.frequency.setValueAtTime(880.0, agora + 0.2);
+      ganho2.gain.setValueAtTime(0.001, agora + 0.2);
+      ganho2.gain.exponentialRampToValueAtTime(0.38, agora + 0.24);
       ganho2.gain.exponentialRampToValueAtTime(0.0001, agora + 0.85);
-
       osc2.connect(ganho2);
       ganho2.connect(ctx.destination);
       osc2.start(agora + 0.2);
       osc2.stop(agora + 0.85);
 
+      notificarDiagnostico('Gongo sintetizado OK (D5 + A5)', 'sucesso');
       setTimeout(resolve, 850);
     } catch (err) {
-      console.warn('[Audio] Falha na reprodução do gongo:', err);
+      notificarDiagnostico(`Falha no gongo: ${err.message}`, 'erro');
       resolve();
     }
   });
@@ -198,11 +360,6 @@ export function tocarGongoChamada() {
 
 let elementoAudioSingleton = null;
 
-/**
- * Obtém ou cria a instância única de elemento <audio> anexada ao DOM da página.
- * Obrigatório para Smart TVs (como Samsung Tizen), onde elementos criados soltos
- * na memória são bloqueados pelo subsistema de mídia de hardware.
- */
 function obterElementoAudioSingleton() {
   if (!elementoAudioSingleton && typeof document !== 'undefined') {
     elementoAudioSingleton = document.getElementById('reprodutor-audio-tv-singleton');
@@ -210,12 +367,13 @@ function obterElementoAudioSingleton() {
       elementoAudioSingleton = document.createElement('audio');
       elementoAudioSingleton.id = 'reprodutor-audio-tv-singleton';
       elementoAudioSingleton.preload = 'auto';
+      // Elemento posicionado com visibilidade no DOM para evitar políticas de suspensão de mídia do Tizen
       elementoAudioSingleton.style.position = 'fixed';
-      elementoAudioSingleton.style.top = '-9999px';
-      elementoAudioSingleton.style.left = '-9999px';
-      elementoAudioSingleton.style.width = '1px';
-      elementoAudioSingleton.style.height = '1px';
-      elementoAudioSingleton.style.opacity = '0';
+      elementoAudioSingleton.style.bottom = '0px';
+      elementoAudioSingleton.style.right = '0px';
+      elementoAudioSingleton.style.width = '2px';
+      elementoAudioSingleton.style.height = '2px';
+      elementoAudioSingleton.style.opacity = '0.01';
       elementoAudioSingleton.style.pointerEvents = 'none';
       document.body.appendChild(elementoAudioSingleton);
     }
@@ -223,10 +381,6 @@ function obterElementoAudioSingleton() {
   return elementoAudioSingleton;
 }
 
-/**
- * Reproduz um fragmento de áudio via o reprodutor nativo HTML5 Singleton do DOM.
- * Utilizado como fallback à prova de falhas em Smart TVs.
- */
 function reproduzirViaElementoNativo(chave) {
   return new Promise((resolve) => {
     const el = obterElementoAudioSingleton();
@@ -248,17 +402,27 @@ function reproduzirViaElementoNativo(chave) {
       }
     };
 
-    el.onended = concluir;
-    el.onerror = concluir;
-    timerSeguranca = setTimeout(concluir, 2200);
+    el.onended = () => {
+      notificarDiagnostico(`HTML5 '${chave}' OK`, 'sucesso');
+      concluir();
+    };
+
+    el.onerror = () => {
+      notificarDiagnostico(`HTML5 '${chave}' erro`, 'erro');
+      concluir();
+    };
+
+    timerSeguranca = setTimeout(() => {
+      notificarDiagnostico(`HTML5 '${chave}' timeout`, 'aviso');
+      concluir();
+    }, 2200);
 
     try {
-      // Tenta WAV primeiro (PCM sem codec), com fallback para MP3
       el.src = `/audio/${chave}.wav`;
       el.load();
-      const promessaPlay = el.play();
-      if (promessaPlay && typeof promessaPlay.catch === 'function') {
-        promessaPlay.catch(() => {
+      const p = el.play();
+      if (p && typeof p.catch === 'function') {
+        p.catch(() => {
           try {
             el.src = `/audio/${chave}.mp3`;
             el.load();
@@ -278,48 +442,7 @@ function reproduzirViaElementoNativo(chave) {
 }
 
 /**
- * Carrega e decodifica o arquivo de áudio de uma palavra, letra ou número.
- * Tenta primeiro WAV (PCM 16-bit nativo universal em Smart TVs / Tizen, sem necessidade de codec),
- * e depois MP3 como alternativa.
- * @param {string} nomeArquivo - Nome base do arquivo
- */
-async function obterAudioBuffer(nomeArquivo) {
-  const chave = String(nomeArquivo).toLowerCase().trim();
-  if (cacheBuffersAudio.has(chave)) {
-    return cacheBuffersAudio.get(chave);
-  }
-
-  const ctx = obterContextoAudio();
-  if (!ctx) return null;
-
-  // WAV é formato PCM puro universal (sem codecs proprietários, 100% suportado pelo Web Audio de Smart TVs)
-  const formatos = ['wav', 'mp3'];
-
-  for (const formato of formatos) {
-    try {
-      const resposta = await fetch(`/audio/${chave}.${formato}`);
-      if (!resposta.ok) continue;
-
-      const tipoConteudo = resposta.headers.get('content-type') || '';
-      if (tipoConteudo.includes('text/html')) continue;
-
-      const arrayBuffer = await resposta.arrayBuffer();
-      const bufferDecodificado = await decodificarAudioCompativel(ctx, arrayBuffer);
-      if (bufferDecodificado) {
-        cacheBuffersAudio.set(chave, bufferDecodificado);
-        return bufferDecodificado;
-      }
-    } catch (erro) {
-      console.warn(`[Audio] Falha ao carregar/decodificar ${chave}.${formato}:`, erro);
-    }
-  }
-
-  return null;
-}
-
-/**
  * Reproduz um fragmento de áudio via AudioContext e aguarda seu término.
- * Possui fallback defensivo para o Reprodutor Singleton HTML5 conectado ao DOM em Smart TVs.
  */
 function reproduzirClip(nomeArquivo, idExecucao) {
   return new Promise(async (resolve) => {
@@ -342,12 +465,26 @@ function reproduzirClip(nomeArquivo, idExecucao) {
         try {
           const fonte = ctx.createBufferSource();
           fonte.buffer = buffer;
-          fonte.connect(ctx.destination);
+
+          // Roteamento via GainNode: obrigatório para TVs Samsung/Tizen passarem pelo mixer DSP
+          const ganho = ctx.createGain();
+          ganho.gain.setValueAtTime(1.0, ctx.currentTime);
+          fonte.connect(ganho);
+          ganho.connect(ctx.destination);
+
+          // Referência global temporária: impede Garbage Collection prematuro mid-playback no Tizen
+          if (typeof window !== 'undefined') {
+            window.__fonteAtivaTv = fonte;
+          }
 
           let finalizado = false;
           const concluir = () => {
             if (!finalizado) {
               finalizado = true;
+              fonte.onended = null;
+              if (typeof window !== 'undefined' && window.__fonteAtivaTv === fonte) {
+                window.__fonteAtivaTv = null;
+              }
               resolve();
             }
           };
@@ -355,123 +492,129 @@ function reproduzirClip(nomeArquivo, idExecucao) {
           fonte.onended = concluir;
 
           // Timeout de salvaguarda caso o evento onended falhe no navegador da TV
-          const duracaoMs = Math.ceil((buffer.duration || 1) * 1000) + 80;
+          const duracaoMs = Math.ceil((buffer.duration || 1) * 1000) + 60;
           setTimeout(concluir, duracaoMs);
 
+          // Início exato baseado no relógio do AudioContext (EVITA passar 0 no Tizen)
+          const tempoInicio = ctx.currentTime;
           if (typeof fonte.start === 'function') {
-            fonte.start(0);
+            fonte.start(tempoInicio);
           } else if (typeof fonte.noteOn === 'function') {
-            fonte.noteOn(0);
+            fonte.noteOn(tempoInicio);
           } else {
             concluir();
           }
+
+          notificarDiagnostico(`Voz: '${chave}' (${buffer.duration.toFixed(2)}s)`);
           return;
         } catch (erroFonte) {
-          console.warn(`[Audio] Erro ao iniciar buffer ${chave}:`, erroFonte);
+          notificarDiagnostico(`Erro BufferSource '${chave}': ${erroFonte.message}`, 'erro');
         }
       }
     }
 
-    // Fallback à prova de falhas: elemento <audio> singleton anexado ao DOM (requisito Samsung Tizen)
+    // Fallback para elemento HTML5 se o buffer falhar
     if (idExecucao && idExecucao !== anuncioAtualId) {
       resolve();
       return;
     }
+
+    notificarDiagnostico(`Fallback HTML5: '${chave}'...`, 'aviso');
     await reproduzirViaElementoNativo(chave);
     resolve();
   });
 }
 
+function aguardar(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 /**
- * Decompõe a senha e o guichê em uma lista sequencial de chaves de áudio.
- * Exemplo: código "D001" e guichê "02" -> ['senha', 'd', '0', '0', '1', 'guiche', '0', '2']
+ * Decompõe um código de senha e guichê em tokens fonéticos padronizados.
  */
 export function decomporSequenciaChamada(codigoFormatado, guicheNumero) {
   const sequencia = [];
-  if (!codigoFormatado) return sequencia;
-
   sequencia.push('senha');
 
-  const codigoLimpo = String(codigoFormatado).trim().toUpperCase();
-  const correspondencia = codigoLimpo.match(/^([A-ZÀ-ÿ]+)(\d+)$/);
+  const codigoLimpo = String(codigoFormatado || '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
 
-  if (correspondencia) {
-    const [, letras, digitos] = correspondencia;
-    // Adiciona cada letra
-    for (const letra of letras) {
-      sequencia.push(letra.toLowerCase());
-    }
-    // Adiciona cada dígito da senha individualmente
-    for (const digito of digitos) {
-      sequencia.push(digito);
-    }
-  } else {
-    for (const char of codigoLimpo) {
-      if (/[A-Z]/.test(char)) {
-        sequencia.push(char.toLowerCase());
-      } else if (/\d/.test(char)) {
-        sequencia.push(char);
-      }
+  for (let i = 0; i < codigoLimpo.length; i++) {
+    const char = codigoLimpo[i].toLowerCase();
+    if (/[a-z0-9]/.test(char)) {
+      sequencia.push(char);
     }
   }
 
-  // Seção do Guichê
   sequencia.push('guiche');
 
-  const guicheNormalizado = String(guicheNumero || '01').padStart(2, '0');
-  for (const digitoGuiche of guicheNormalizado) {
-    sequencia.push(digitoGuiche);
+  const guicheTexto = String(guicheNumero || '01').trim();
+  for (let i = 0; i < guicheTexto.length; i++) {
+    const char = guicheTexto[i].toLowerCase();
+    if (/[a-z0-9]/.test(char)) {
+      sequencia.push(char);
+    }
   }
 
   return sequencia;
 }
 
 /**
- * Anuncia a chamada da senha na TV com gongo seguido de voz gravada feminina estilo Correios.
- * Impede sobreposição de áudios concorrentes via token de execução unívoco.
- * @param {string} codigoFormatado - Código da senha (ex: "D001").
- * @param {string|number} guicheNumero - Número do guichê (ex: "02").
+ * Executa o anúncio sonoro completo de uma chamada de senha.
  */
 export async function anunciarChamada(codigoFormatado, guicheNumero) {
-  if (!audioHabilitado) return;
+  if (!audioHabilitado) {
+    notificarDiagnostico('Chamada ignorada: áudio desabilitado', 'aviso');
+    return;
+  }
 
   const idExecucao = ++anuncioAtualId;
+  notificarDiagnostico(`Chamada #${idExecucao}: ${codigoFormatado} (Guichê ${guicheNumero})`);
 
   await inicializarContextoAudio();
 
   // 1. Toca o gongo bimodal de chamada
   await tocarGongoChamada();
 
-  if (idExecucao !== anuncioAtualId) return;
+  if (idExecucao !== anuncioAtualId) {
+    notificarDiagnostico(`Chamada #${idExecucao} abortada (substituída)`, 'aviso');
+    return;
+  }
 
-  // Pequena pausa respeitosa de 300ms após o gongo
-  await aguardar(300);
+  // Pausa respeitosa de 320ms após o término do gongo
+  await aguardar(320);
 
   if (idExecucao !== anuncioAtualId) return;
 
   // 2. Decompõe a chamada em fragmentos
   const sequencia = decomporSequenciaChamada(codigoFormatado, guicheNumero);
+  notificarDiagnostico(`Fila de voz: [${sequencia.join(', ')}]`);
 
-  // 3. Reproduz sequencialmente cada fragmento com pausas calibradas
+  // 3. Reproduz sequencialmente cada fragmento
   for (let indice = 0; indice < sequencia.length; indice++) {
-    if (idExecucao !== anuncioAtualId) return;
+    if (idExecucao !== anuncioAtualId) {
+      notificarDiagnostico(`Chamada #${idExecucao} interrompida no fragmento ${indice}`, 'aviso');
+      return;
+    }
 
     const item = sequencia[indice];
     await reproduzirClip(item, idExecucao);
 
-    if (idExecucao !== anuncioAtualId) return;
-
-    // Pausas entre palavras no padrão dos Correios:
+    // Pausas naturais entre palavras
     if (item === 'senha') {
-      await aguardar(200);
+      await aguardar(260);
     } else if (item === 'guiche') {
-      await aguardar(200);
-    } else if (/[a-z]/.test(item)) {
-      // Pausa após a letra antes de começar os números da senha
-      await aguardar(220);
+      await aguardar(240);
     } else {
-      // Pausa entre dígitos individuais
       await aguardar(140);
     }
   }
+
+  notificarDiagnostico(`Chamada #${idExecucao} finalizada com sucesso!`, 'sucesso');
+}
+
+export async function carregarVozesDisponiveis() {
+  await preCarregarTodosAudios();
+  return [];
 }
