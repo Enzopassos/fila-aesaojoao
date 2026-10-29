@@ -28,14 +28,9 @@ export function inscreverDiagnosticoAudio(callback) {
 }
 
 function notificarDiagnostico(mensagem, nivel = 'info') {
-  const agora = new Date().toLocaleTimeString('pt-BR');
-  const payload = { id: Math.random(), carimbo: agora, mensagem, nivel };
-  console.log(`[AudioTv][${nivel.toUpperCase()}] ${mensagem}`);
-  ouvintesDiagnostico.forEach((cb) => {
-    try {
-      cb(payload);
-    } catch {}
-  });
+  if (nivel === 'erro') {
+    console.error(`[AudioTv] ${mensagem}`);
+  }
 }
 
 /**

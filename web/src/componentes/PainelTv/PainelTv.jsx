@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Volume2, VolumeX } from 'lucide-react';
+import { VolumeX } from 'lucide-react';
 import { BarraLateral } from './BarraLateral';
 import { SenhaDestaque } from './SenhaDestaque';
 import { HistoricoSenhas } from './HistoricoSenhas';
@@ -8,9 +8,7 @@ import { filaServico } from '../../servicos/filaServico';
 import {
   anunciarChamada,
   inicializarContextoAudio,
-  preCarregarTodosAudios,
-  inscreverDiagnosticoAudio,
-  obterEstatisticasAudio
+  preCarregarTodosAudios
 } from '../../servicos/audioServico';
 import { inscreverEventos } from '../../servicos/canalSincronizacao';
 import './PainelTv.css';
@@ -30,33 +28,16 @@ export function PainelTv() {
   const [ultimasChamadas, setUltimasChamadas] = useState([]);
   const [emAnimacao, setEmAnimacao] = useState(false);
   const [audioDesbloqueado, setAudioDesbloqueado] = useState(false);
-  const [logsDiagnostico, setLogsDiagnostico] = useState([]);
-  const [exibirDiagnostico, setExibirDiagnostico] = useState(true);
-  const [estatisticas, setEstatisticas] = useState({
-    estado: 'inativo',
-    taxaAmostragem: 0,
-    totalEmMemoria: 0,
-    totalDisponivel: 38
-  });
 
   const timerAnimacao = useRef(null);
   const ultimaChamadaProcessadaRef = useRef({ chave: '', carimboTempo: 0 });
 
-  // Inscrição no canal de diagnóstico em tempo real e pré-carregamento imediato dos áudios
+  // Pré-carrega todos os 38 clips em background e tenta inicializar o áudio imediatamente
   useEffect(() => {
-    const cancelarDiagnostico = inscreverDiagnosticoAudio((item) => {
-      setLogsDiagnostico((anteriores) => [...anteriores.slice(-7), item]);
-      setEstatisticas(obterEstatisticasAudio());
+    preCarregarTodosAudios();
+    inicializarContextoAudio().then((ativo) => {
+      if (ativo) setAudioDesbloqueado(true);
     });
-
-    // Pré-carrega todos os 38 clips em background assim que o painel é montado
-    preCarregarTodosAudios().then(() => {
-      setEstatisticas(obterEstatisticasAudio());
-    });
-
-    return () => {
-      cancelarDiagnostico();
-    };
   }, []);
 
   // Mantém a proporção exata ao redimensionar a tela da TV
@@ -80,11 +61,10 @@ export function PainelTv() {
     };
   }, []);
 
-  // Desbloqueia o subsistema de áudio e pré-carrega as vozes
+  // Desbloqueia o subsistema de áudio
   const desbloquearAudio = useCallback(async () => {
     await inicializarContextoAudio();
     await preCarregarTodosAudios();
-    setEstatisticas(obterEstatisticasAudio());
     setAudioDesbloqueado(true);
   }, []);
 
@@ -213,14 +193,6 @@ export function PainelTv() {
     };
   }, [carregarDadosIniciais, processarChamadaComDeduplicacao]);
 
-  const handleTestarChamada = (e) => {
-    if (e) e.stopPropagation();
-    anunciarChamada(
-      senhaDestaque?.codigo_formatado || 'A001',
-      senhaDestaque?.guiche || senhaDestaque?.guiche_numero || '01'
-    );
-  };
-
   return (
     <div className="painel-tv-palco-externo">
       {/* Alerta de desbloqueio passivo caso a TV exija interação inicial */}
@@ -237,52 +209,6 @@ export function PainelTv() {
           </div>
         </button>
       )}
-
-      {/* Console Flutuante de Diagnóstico e Calibração de Áudio da TV */}
-      <div className="painel-tv-diagnostico-flutuante">
-        <div className="painel-tv-diagnostico-topo">
-          <div className="painel-tv-diagnostico-badge">
-            <span className={`status-ponto ${estatisticas.estado === 'running' ? 'ativo' : 'inativo'}`} />
-            <span className="texto-status">
-              Tizen: {estatisticas.estado} ({estatisticas.taxaAmostragem}Hz) | {estatisticas.totalEmMemoria}/{estatisticas.totalDisponivel} clips
-            </span>
-          </div>
-
-          <div className="painel-tv-diagnostico-acoes">
-            <button
-              type="button"
-              className="painel-tv-btn-mini teste"
-              onClick={handleTestarChamada}
-              title="Testar anúncio de voz da TV"
-            >
-              <Volume2 size={15} />
-              <span>Testar Voz</span>
-            </button>
-            <button
-              type="button"
-              className="painel-tv-btn-mini toggle"
-              onClick={() => setExibirDiagnostico(!exibirDiagnostico)}
-            >
-              <span>{exibirDiagnostico ? 'Ocultar' : 'Logs'}</span>
-            </button>
-          </div>
-        </div>
-
-        {exibirDiagnostico && (
-          <div className="painel-tv-diagnostico-logs">
-            {logsDiagnostico.length === 0 ? (
-              <div className="painel-tv-log-linha info">Aguardando eventos...</div>
-            ) : (
-              logsDiagnostico.map((log) => (
-                <div key={log.id} className={`painel-tv-log-linha ${log.nivel}`}>
-                  <span className="log-hora">{log.carimbo}</span>
-                  <span className="log-msg">{log.mensagem}</span>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-      </div>
 
       <div
         className="painel-tv-canvas-fixo"
