@@ -29,6 +29,7 @@ export function PainelTv() {
   const [emAnimacao, setEmAnimacao] = useState(false);
   const [audioDesbloqueado, setAudioDesbloqueado] = useState(false);
   const timerAnimacao = useRef(null);
+  const ultimaChamadaProcessadaRef = useRef({ chave: '', carimboTempo: 0 });
 
   // Mantém a proporção exata ao redimensionar a tela da TV
   useEffect(() => {
@@ -93,6 +94,33 @@ export function PainelTv() {
     }, 4500);
   }, []);
 
+  // Processa a chamada evitando disparos duplicados quando Supabase Realtime e BroadcastChannel emitem juntos
+  const processarChamadaComDeduplicacao = useCallback(
+    (senha) => {
+      if (!senha) return;
+
+      const agora = Date.now();
+      const idSenha = senha.id || senha.codigo_formatado || 'padrao';
+      const contador = senha.chamadas_total || 0;
+      const chaveAtual = `${idSenha}_${contador}`;
+      const ultima = ultimaChamadaProcessadaRef.current;
+
+      // Descarta se for exatamente o mesmo evento recebido no intervalo de 2,5 segundos
+      if (ultima.chave === chaveAtual && agora - ultima.carimboTempo < 2500) {
+        return;
+      }
+
+      ultimaChamadaProcessadaRef.current = {
+        chave: chaveAtual,
+        carimboTempo: agora
+      };
+
+      setSenhaDestaque(senha);
+      dispararAlertaVisualESonoro(senha);
+    },
+    [dispararAlertaVisualESonoro]
+  );
+
   // Carrega estado inicial de senhas chamadas diretamente do banco
   const carregarDadosIniciais = useCallback(async () => {
     try {
@@ -121,8 +149,7 @@ export function PainelTv() {
       const senhaFormatada = { ...novaSenha, guiche };
 
       if (novaSenha.status === 'chamado') {
-        setSenhaDestaque(senhaFormatada);
-        dispararAlertaVisualESonoro(senhaFormatada);
+        processarChamadaComDeduplicacao(senhaFormatada);
 
         const ultimasAtualizadas = await filaServico.obterUltimasChamadasCronologicas(novaSenha.id, 4);
         setUltimasChamadas(ultimasAtualizadas);
@@ -140,8 +167,7 @@ export function PainelTv() {
         const senhaEfetiva = destaqueLocal || senha;
 
         if (senhaEfetiva) {
-          setSenhaDestaque(senhaEfetiva);
-          dispararAlertaVisualESonoro(senhaEfetiva);
+          processarChamadaComDeduplicacao(senhaEfetiva);
         }
 
         const ultimasAtualizadas = await filaServico.obterUltimasChamadasCronologicas(senhaEfetiva?.id || null, 4);
@@ -156,7 +182,7 @@ export function PainelTv() {
         clearTimeout(timerAnimacao.current);
       }
     };
-  }, [carregarDadosIniciais, dispararAlertaVisualESonoro]);
+  }, [carregarDadosIniciais, processarChamadaComDeduplicacao]);
 
   const handleTestarChamada = (e) => {
     e.stopPropagation();

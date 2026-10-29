@@ -8,6 +8,7 @@
 let contextoAudio = null;
 let audioHabilitado = true;
 const cacheBuffersAudio = new Map();
+let anuncioAtualId = 0;
 
 /**
  * Cria ou recupera a instância compartilhada de AudioContext.
@@ -20,6 +21,58 @@ function obterContextoAudio() {
     }
   }
   return contextoAudio;
+}
+
+/**
+ * Decodifica o ArrayBuffer de áudio garantindo compatibilidade universal com
+ * navegadores modernos (baseados em Promise) e legados/Smart TVs (baseados em Callbacks).
+ */
+function decodificarAudioCompativel(ctx, arrayBuffer) {
+  return new Promise((resolve, reject) => {
+    let finalizado = false;
+    const copiaBuffer = arrayBuffer.slice(0);
+
+    try {
+      const promessaOuVazio = ctx.decodeAudioData(
+        copiaBuffer,
+        (bufferDecodificado) => {
+          if (!finalizado) {
+            finalizado = true;
+            resolve(bufferDecodificado);
+          }
+        },
+        (erroDecodificacao) => {
+          if (!finalizado) {
+            finalizado = true;
+            reject(erroDecodificacao || new Error('Falha ao decodificar áudio'));
+          }
+        }
+      );
+
+      // Suporte a navegadores que retornam Promise mesmo com callbacks informados
+      if (promessaOuVazio && typeof promessaOuVazio.then === 'function') {
+        promessaOuVazio.then(
+          (bufferDecodificado) => {
+            if (!finalizado) {
+              finalizado = true;
+              resolve(bufferDecodificado);
+            }
+          },
+          (erro) => {
+            if (!finalizado) {
+              finalizado = true;
+              reject(erro);
+            }
+          }
+        );
+      }
+    } catch (erroSincrono) {
+      if (!finalizado) {
+        finalizado = true;
+        reject(erroSincrono);
+      }
+    }
+  });
 }
 
 /**
@@ -51,9 +104,27 @@ export function definirStatusAudio(ativo) {
 }
 
 /**
+ * Pré-carrega os áudios essenciais na memória para eliminar latência durante as chamadas.
+ */
+export async function preCarregarAudiosEssenciais() {
+  const chavesBasicas = [
+    'senha', 'guiche',
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+    'a', 'b', 'c', 'd', 'e', 'p', 's'
+  ];
+
+  try {
+    await Promise.all(chavesBasicas.map((chave) => obterAudioBuffer(chave)));
+  } catch (e) {
+    console.warn('[Audio] Falha parcial no pré-carregamento dos áudios:', e);
+  }
+}
+
+/**
  * Mantido por compatibilidade de interface.
  */
 export async function carregarVozesDisponiveis() {
+  await preCarregarAudiosEssenciais();
   return [];
 }
 
@@ -146,9 +217,17 @@ async function obterAudioBuffer(nomeArquivo) {
       return null;
     }
 
+    const tipoConteudo = resposta.headers.get('content-type') || '';
+    if (tipoConteudo.includes('text/html')) {
+      console.warn(`[Audio] Arquivo /audio/${chave}.mp3 retornou HTML em vez de áudio.`);
+      return null;
+    }
+
     const arrayBuffer = await resposta.arrayBuffer();
-    const bufferDecodificado = await ctx.decodeAudioData(arrayBuffer);
-    cacheBuffersAudio.set(chave, bufferDecodificado);
+    const bufferDecodificado = await decodificarAudioCompativel(ctx, arrayBuffer);
+    if (bufferDecodificado) {
+      cacheBuffersAudio.set(chave, bufferDecodificado);
+    }
     return bufferDecodificado;
   } catch (erro) {
     console.warn(`[Audio] Erro ao carregar/decodificar áudio de ${chave}:`, erro);
@@ -158,22 +237,52 @@ async function obterAudioBuffer(nomeArquivo) {
 
 /**
  * Reproduz um fragmento de áudio via AudioContext e aguarda seu término.
- * Possui fallback automático para o elemento HTML5 Audio.
+ * Possui fallback defensivo contra dessincronização e timeouts em Smart TVs.
  */
-function reproduzirClip(nomeArquivo) {
+function reproduzirClip(nomeArquivo, idExecucao) {
   return new Promise(async (resolve) => {
+    if (idExecucao && idExecucao !== anuncioAtualId) {
+      resolve();
+      return;
+    }
+
     const chave = String(nomeArquivo).toLowerCase().trim();
     const ctx = obterContextoAudio();
 
     if (ctx && ctx.state === 'running') {
       const buffer = await obterAudioBuffer(chave);
+      if (idExecucao && idExecucao !== anuncioAtualId) {
+        resolve();
+        return;
+      }
+
       if (buffer) {
         try {
           const fonte = ctx.createBufferSource();
           fonte.buffer = buffer;
           fonte.connect(ctx.destination);
-          fonte.onended = () => resolve();
-          fonte.start(0);
+
+          let finalizado = false;
+          const concluir = () => {
+            if (!finalizado) {
+              finalizado = true;
+              resolve();
+            }
+          };
+
+          fonte.onended = concluir;
+
+          // Timeout de salvaguarda caso o evento onended falhe no navegador da TV
+          const duracaoMs = Math.ceil((buffer.duration || 1) * 1000) + 80;
+          setTimeout(concluir, duracaoMs);
+
+          if (typeof fonte.start === 'function') {
+            fonte.start(0);
+          } else if (typeof fonte.noteOn === 'function') {
+            fonte.noteOn(0);
+          } else {
+            concluir();
+          }
           return;
         } catch (erroFonte) {
           console.warn(`[Audio] Erro ao iniciar buffer ${chave}:`, erroFonte);
@@ -181,12 +290,21 @@ function reproduzirClip(nomeArquivo) {
       }
     }
 
-    // Fallback via HTMLAudioElement
+    // Fallback defensivo via HTMLAudioElement
     try {
       const elementoAudio = new Audio(`/audio/${chave}.mp3`);
-      elementoAudio.onended = () => resolve();
-      elementoAudio.onerror = () => resolve();
-      elementoAudio.play().catch(() => resolve());
+      let finalizadoAudio = false;
+      const concluirAudio = () => {
+        if (!finalizadoAudio) {
+          finalizadoAudio = true;
+          resolve();
+        }
+      };
+
+      elementoAudio.onended = concluirAudio;
+      elementoAudio.onerror = concluirAudio;
+      setTimeout(concluirAudio, 2500);
+      elementoAudio.play().catch(concluirAudio);
     } catch {
       resolve();
     }
@@ -238,29 +356,39 @@ export function decomporSequenciaChamada(codigoFormatado, guicheNumero) {
 }
 
 /**
- * Anuncia a chamada da senha na TV com gongo seguido de voz gravada estilo Correios.
- * Reproduz a letra, pequena pausa e então cada número um por um.
+ * Anuncia a chamada da senha na TV com gongo seguido de voz gravada feminina estilo Correios.
+ * Impede sobreposição de áudios concorrentes via token de execução unívoco.
  * @param {string} codigoFormatado - Código da senha (ex: "D001").
  * @param {string|number} guicheNumero - Número do guichê (ex: "02").
  */
 export async function anunciarChamada(codigoFormatado, guicheNumero) {
   if (!audioHabilitado) return;
 
+  const idExecucao = ++anuncioAtualId;
+
   await inicializarContextoAudio();
 
   // 1. Toca o gongo bimodal de chamada
   await tocarGongoChamada();
 
+  if (idExecucao !== anuncioAtualId) return;
+
   // Pequena pausa respeitosa de 300ms após o gongo
   await aguardar(300);
+
+  if (idExecucao !== anuncioAtualId) return;
 
   // 2. Decompõe a chamada em fragmentos
   const sequencia = decomporSequenciaChamada(codigoFormatado, guicheNumero);
 
   // 3. Reproduz sequencialmente cada fragmento com pausas calibradas
   for (let indice = 0; indice < sequencia.length; indice++) {
+    if (idExecucao !== anuncioAtualId) return;
+
     const item = sequencia[indice];
-    await reproduzirClip(item);
+    await reproduzirClip(item, idExecucao);
+
+    if (idExecucao !== anuncioAtualId) return;
 
     // Pausas entre palavras no padrão dos Correios:
     if (item === 'senha') {
