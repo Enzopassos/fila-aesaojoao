@@ -26,51 +26,50 @@ function obterContextoAudio() {
 /**
  * Decodifica o ArrayBuffer de áudio garantindo compatibilidade universal com
  * navegadores modernos (baseados em Promise) e legados/Smart TVs (baseados em Callbacks).
+ * Inclui timeout de proteção para evitar congelamento caso a TV falhe silenciosamente.
  */
 function decodificarAudioCompativel(ctx, arrayBuffer) {
   return new Promise((resolve, reject) => {
     let finalizado = false;
     const copiaBuffer = arrayBuffer.slice(0);
 
+    // Timeout de 1500ms: impede que motores de Smart TV travem a Promise em silêncio
+    const timerLimite = setTimeout(() => {
+      if (!finalizado) {
+        finalizado = true;
+        reject(new Error('Timeout na decodificação de áudio'));
+      }
+    }, 1500);
+
+    const concluirSucesso = (bufferDecodificado) => {
+      if (!finalizado) {
+        finalizado = true;
+        clearTimeout(timerLimite);
+        resolve(bufferDecodificado);
+      }
+    };
+
+    const concluirErro = (erro) => {
+      if (!finalizado) {
+        finalizado = true;
+        clearTimeout(timerLimite);
+        reject(erro || new Error('Falha ao decodificar áudio'));
+      }
+    };
+
     try {
       const promessaOuVazio = ctx.decodeAudioData(
         copiaBuffer,
-        (bufferDecodificado) => {
-          if (!finalizado) {
-            finalizado = true;
-            resolve(bufferDecodificado);
-          }
-        },
-        (erroDecodificacao) => {
-          if (!finalizado) {
-            finalizado = true;
-            reject(erroDecodificacao || new Error('Falha ao decodificar áudio'));
-          }
-        }
+        concluirSucesso,
+        concluirErro
       );
 
       // Suporte a navegadores que retornam Promise mesmo com callbacks informados
       if (promessaOuVazio && typeof promessaOuVazio.then === 'function') {
-        promessaOuVazio.then(
-          (bufferDecodificado) => {
-            if (!finalizado) {
-              finalizado = true;
-              resolve(bufferDecodificado);
-            }
-          },
-          (erro) => {
-            if (!finalizado) {
-              finalizado = true;
-              reject(erro);
-            }
-          }
-        );
+        promessaOuVazio.then(concluirSucesso).catch(concluirErro);
       }
     } catch (erroSincrono) {
-      if (!finalizado) {
-        finalizado = true;
-        reject(erroSincrono);
-      }
+      concluirErro(erroSincrono);
     }
   });
 }
@@ -197,9 +196,92 @@ export function tocarGongoChamada() {
   });
 }
 
+let elementoAudioSingleton = null;
+
+/**
+ * Obtém ou cria a instância única de elemento <audio> anexada ao DOM da página.
+ * Obrigatório para Smart TVs (como Samsung Tizen), onde elementos criados soltos
+ * na memória são bloqueados pelo subsistema de mídia de hardware.
+ */
+function obterElementoAudioSingleton() {
+  if (!elementoAudioSingleton && typeof document !== 'undefined') {
+    elementoAudioSingleton = document.getElementById('reprodutor-audio-tv-singleton');
+    if (!elementoAudioSingleton) {
+      elementoAudioSingleton = document.createElement('audio');
+      elementoAudioSingleton.id = 'reprodutor-audio-tv-singleton';
+      elementoAudioSingleton.preload = 'auto';
+      elementoAudioSingleton.style.position = 'fixed';
+      elementoAudioSingleton.style.top = '-9999px';
+      elementoAudioSingleton.style.left = '-9999px';
+      elementoAudioSingleton.style.width = '1px';
+      elementoAudioSingleton.style.height = '1px';
+      elementoAudioSingleton.style.opacity = '0';
+      elementoAudioSingleton.style.pointerEvents = 'none';
+      document.body.appendChild(elementoAudioSingleton);
+    }
+  }
+  return elementoAudioSingleton;
+}
+
+/**
+ * Reproduz um fragmento de áudio via o reprodutor nativo HTML5 Singleton do DOM.
+ * Utilizado como fallback à prova de falhas em Smart TVs.
+ */
+function reproduzirViaElementoNativo(chave) {
+  return new Promise((resolve) => {
+    const el = obterElementoAudioSingleton();
+    if (!el) {
+      resolve();
+      return;
+    }
+
+    let finalizado = false;
+    let timerSeguranca = null;
+
+    const concluir = () => {
+      if (!finalizado) {
+        finalizado = true;
+        if (timerSeguranca) clearTimeout(timerSeguranca);
+        el.onended = null;
+        el.onerror = null;
+        resolve();
+      }
+    };
+
+    el.onended = concluir;
+    el.onerror = concluir;
+    timerSeguranca = setTimeout(concluir, 2200);
+
+    try {
+      // Tenta WAV primeiro (PCM sem codec), com fallback para MP3
+      el.src = `/audio/${chave}.wav`;
+      el.load();
+      const promessaPlay = el.play();
+      if (promessaPlay && typeof promessaPlay.catch === 'function') {
+        promessaPlay.catch(() => {
+          try {
+            el.src = `/audio/${chave}.mp3`;
+            el.load();
+            const p2 = el.play();
+            if (p2 && typeof p2.catch === 'function') {
+              p2.catch(concluir);
+            }
+          } catch {
+            concluir();
+          }
+        });
+      }
+    } catch {
+      concluir();
+    }
+  });
+}
+
 /**
  * Carrega e decodifica o arquivo de áudio de uma palavra, letra ou número.
- * @param {string} nomeArquivo - Nome base do arquivo em /audio/{nomeArquivo}.mp3
+ * Tenta primeiro WAV (PCM 16-bit nativo universal em Smart TVs / Tizen, sem necessidade de codec),
+ * e depois MP3 como alternativa.
+ * @param {string} nomeArquivo - Nome base do arquivo
  */
 async function obterAudioBuffer(nomeArquivo) {
   const chave = String(nomeArquivo).toLowerCase().trim();
@@ -210,34 +292,34 @@ async function obterAudioBuffer(nomeArquivo) {
   const ctx = obterContextoAudio();
   if (!ctx) return null;
 
-  try {
-    const resposta = await fetch(`/audio/${chave}.mp3`);
-    if (!resposta.ok) {
-      console.warn(`[Audio] Arquivo /audio/${chave}.mp3 não encontrado.`);
-      return null;
-    }
+  // WAV é formato PCM puro universal (sem codecs proprietários, 100% suportado pelo Web Audio de Smart TVs)
+  const formatos = ['wav', 'mp3'];
 
-    const tipoConteudo = resposta.headers.get('content-type') || '';
-    if (tipoConteudo.includes('text/html')) {
-      console.warn(`[Audio] Arquivo /audio/${chave}.mp3 retornou HTML em vez de áudio.`);
-      return null;
-    }
+  for (const formato of formatos) {
+    try {
+      const resposta = await fetch(`/audio/${chave}.${formato}`);
+      if (!resposta.ok) continue;
 
-    const arrayBuffer = await resposta.arrayBuffer();
-    const bufferDecodificado = await decodificarAudioCompativel(ctx, arrayBuffer);
-    if (bufferDecodificado) {
-      cacheBuffersAudio.set(chave, bufferDecodificado);
+      const tipoConteudo = resposta.headers.get('content-type') || '';
+      if (tipoConteudo.includes('text/html')) continue;
+
+      const arrayBuffer = await resposta.arrayBuffer();
+      const bufferDecodificado = await decodificarAudioCompativel(ctx, arrayBuffer);
+      if (bufferDecodificado) {
+        cacheBuffersAudio.set(chave, bufferDecodificado);
+        return bufferDecodificado;
+      }
+    } catch (erro) {
+      console.warn(`[Audio] Falha ao carregar/decodificar ${chave}.${formato}:`, erro);
     }
-    return bufferDecodificado;
-  } catch (erro) {
-    console.warn(`[Audio] Erro ao carregar/decodificar áudio de ${chave}:`, erro);
-    return null;
   }
+
+  return null;
 }
 
 /**
  * Reproduz um fragmento de áudio via AudioContext e aguarda seu término.
- * Possui fallback defensivo contra dessincronização e timeouts em Smart TVs.
+ * Possui fallback defensivo para o Reprodutor Singleton HTML5 conectado ao DOM em Smart TVs.
  */
 function reproduzirClip(nomeArquivo, idExecucao) {
   return new Promise(async (resolve) => {
@@ -290,24 +372,13 @@ function reproduzirClip(nomeArquivo, idExecucao) {
       }
     }
 
-    // Fallback defensivo via HTMLAudioElement
-    try {
-      const elementoAudio = new Audio(`/audio/${chave}.mp3`);
-      let finalizadoAudio = false;
-      const concluirAudio = () => {
-        if (!finalizadoAudio) {
-          finalizadoAudio = true;
-          resolve();
-        }
-      };
-
-      elementoAudio.onended = concluirAudio;
-      elementoAudio.onerror = concluirAudio;
-      setTimeout(concluirAudio, 2500);
-      elementoAudio.play().catch(concluirAudio);
-    } catch {
+    // Fallback à prova de falhas: elemento <audio> singleton anexado ao DOM (requisito Samsung Tizen)
+    if (idExecucao && idExecucao !== anuncioAtualId) {
       resolve();
+      return;
     }
+    await reproduzirViaElementoNativo(chave);
+    resolve();
   });
 }
 
